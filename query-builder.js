@@ -41,10 +41,21 @@ module.exports = exports = class QueryBuilder {
 		super.catch(onRejected);
 	}
 
-	_dbCase(input) {
+	_dbCase(input, quote) {
 		return input
 			.split('.')
-			.map((part) => caseit(part, this._options.casing.db))
+			.map((part) => {
+				const cased = caseit(part, this._options.casing.db);
+				if (quote) return `"${cased}"`;
+				return cased;
+			})
+			.join('.');
+	}
+
+	_quoteKey(input) {
+		return input
+			.split('.')
+			.map((part) => `"${part}"`)
 			.join('.');
 	}
 
@@ -226,8 +237,8 @@ module.exports = exports = class QueryBuilder {
 	_buildSorting() {
 		if (!this._sortingKeys.length) return;
 		return `ORDER BY ${this._sortingKeys.map((key) => {
-			if (key.substr(0, 1) == '-') return `${this._dbCase(key.substr(1))} DESC`;
-			return this._dbCase(key);
+			if (key.substr(0, 1) == '-') return `${this._dbCase(key.substr(1), true)} DESC`;
+			return this._dbCase(key, true);
 		}).join(', ')}`;
 	}
 
