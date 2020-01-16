@@ -102,7 +102,6 @@ module.exports = exports = class Db {
 			query,
 			parameters: args[0]
 		});
-		console.info(query);
 		return await this._client.query(query, ...args);
 	}
 
