@@ -74,7 +74,7 @@ module.exports = exports = class QueryBuilder {
 
 	_deductKeyValues(keysAndValues) {
 		if (!keysAndValues) throw new TypeError('Keys and values must be provided.');
-		if (typeof values !== 'object') throw new TypeError('Keys and values must be an object.');
+		if (typeof keysAndValues !== 'object') throw new TypeError('Keys and values must be an object.');
 		let keys = [];
 		let values = [];
 		Object.keys(keysAndValues).forEach((key) => {
@@ -174,12 +174,12 @@ module.exports = exports = class QueryBuilder {
 		return await this._exec();
 	}
 
-	_buildKeys(keys) {
+	_buildKeys(keys, quote) {
 		return keys.map((key) => {
 			if (key.substr(0,1) == ':') return key.substr(1);
 			let as = key.split(':');
-			if (as.length == 1) return this._dbCase(as[0]);
-			return `${this._dbCase(as[0])} AS ${this._dbCase(as[1])}`;
+			if (as.length == 1) return this._dbCase(as[0], quote);
+			return `${this._dbCase(as[0], quote)} AS ${this._dbCase(as[1])}`;
 		}).join(', ');
 	}
 
@@ -265,10 +265,10 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	_buildInsertValues() {
-		return `SET ${this._insertValues.map((value) => {
+		return this._insertValues.map((value) => {
 			this._queryParameters.push(value);
 			return `$${this._queryParameters.length}`;
-		}).join(', ')}`;
+		}).join(', ');
 	}
 
 	_build() {
@@ -302,9 +302,11 @@ module.exports = exports = class QueryBuilder {
 			parts = parts.concat([
 				'INTO',
 				this._table,
-				this._buildKeys(this._insertKeys),
+				'(',
+				this._buildKeys(this._insertKeys, true),
+				') VALUES (',
 				this._buildInsertValues(),
-				'RETURNING *'
+				') RETURNING *'
 			]);
 			break;
 		case 'DELETE':

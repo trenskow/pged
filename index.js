@@ -102,6 +102,7 @@ module.exports = exports = class Db {
 			query,
 			parameters: args[0]
 		});
+		console.info(query);
 		return await this._client.query(query, ...args);
 	}
 
@@ -203,7 +204,7 @@ module.exports = exports = class Db {
 			if (queryBuilder._first === true) {
 				return (result || [])[0];
 			} else if (queryBuilder._first) {
-				return ((result || []) || {})[queryBuilder._first];
+				return ((result || [])[0] || {})[queryBuilder._first];
 			}
 			return result;
 		});
