@@ -1,4 +1,4 @@
-piggybag
+@trenskow/piggybag
 ----
 
 Just a silly little db management and query builder for Postgresql.
