@@ -87,17 +87,20 @@ module.exports = exports = class QueryBuilder {
 	async update(keysAndValues) {
 		this._command = 'UPDATE';
 		[this._updateKeys, this._updateValues] = this._deductKeyValues(keysAndValues);
-		return await this._exec();
+		this._transaction = true;
+		return await this.first();
 	}
 
 	async insert(keysAndValues) {
 		this._command = 'INSERT';
 		[this._insertKeys, this._insertValues] = this._deductKeyValues(keysAndValues);
-		return await this._exec();
+		this._transaction = true;
+		return await this.first();
 	}
 
 	async delete() {
 		this._command = 'DELETE';
+		this._transaction = true;
 		return await this._exec();
 	}
 
