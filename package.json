@@ -1,5 +1,5 @@
 {
-  "name": "@trenskow/piggybag",
+  "name": "@trenskow/pged",
   "version": "1.0.4",
   "description": "A simple query builder for Postgresql.",
   "main": "index.js",
