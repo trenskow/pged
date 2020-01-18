@@ -5,9 +5,9 @@ Just a silly little db management and query builder for Postgresql.
 
 # Usage
 
-    const Db = require('piggybag');
+    const PGed = require('@trenskow/pged');
     
-    const db = new Db();
+    const db = new PGed({ /* pg config */});
     
     const updatedUser = await db.transaction(async () => {
     
