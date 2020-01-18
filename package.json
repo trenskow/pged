@@ -1,7 +1,7 @@
 {
   "name": "@trenskow/pged",
   "version": "1.0.6",
-  "description": "A simple query builder for Postgresql.",
+  "description": "Just a silly little db management and query builder for Postgresql.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
