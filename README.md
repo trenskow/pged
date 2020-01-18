@@ -20,12 +20,12 @@ Just a silly little db management and query builder for Postgresql.
             .from('users')
             .select('id,username')
             .where({
-                 $or: {
-                     id: 12,
-                     username: 'myusername'
-                 }
-             })
-             .first();
+                $or: {
+                    id: 12,
+                    username: 'myusername'
+                }
+            })
+            .first();
     
     });
 
