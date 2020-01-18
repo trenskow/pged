@@ -10,17 +10,22 @@ const
 
 let id = 0;
 
-const pool = new Pool({
-	user: process.env.PG_USER,
-	host: process.env.PG_HOST,
-	database: process.env.PG_DATABASE,
-	password: process.env.PG_PASSWORD,
-	port: process.env.PG_PORT || 5432,
-});
+let pgOptions;
+let pool;
 
 module.exports = exports = class Db {
 
+	static get pg() {
+		return pgOptions;
+	}
+
+	static set pg(options) {
+		pgOptions = options;
+	}
+
 	constructor(options = {}) {
+
+		pool = pool || new Pool(pgOptions);
 
 		this._options = options;
 
@@ -91,6 +96,10 @@ module.exports = exports = class Db {
 			}
 		});
 		return result;
+	}
+
+	get id() {
+		return this._id;
 	}
 
 	get history() {
