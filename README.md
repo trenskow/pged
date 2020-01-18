@@ -51,6 +51,8 @@ To set connection parameters use environment variables or do as below.
 
     PGed.pg = { /* Options */ };
 
+    const db = new PGed({ /* options */ })
+
 See the [pg](https://www.npmjs.com/package/pg) package for available environment variables and options.
 
 # License
