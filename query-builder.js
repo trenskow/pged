@@ -186,41 +186,75 @@ module.exports = exports = class QueryBuilder {
 		}).join(', ');
 	}
 
-	_buildConditions(conditions, operator = 'AND', comparer = '=', wrap = true) {
+	get _operatorMap() {
+		return {
+			'$or': 'OR',
+			'$and': 'AND'
+		};
+	}
+
+	get _comparerMap() {
+		return {
+			'$eq': '=',
+			'$ne': '!=',
+			'$lt': '<',
+			'$lte': '<=',
+			'$gt': '>',
+			'$gte': '>=',
+			'$regexp': '~*'
+		};
+	}
+
+	_buildConditions(conditions, operator = '$and', comparer = '$eq', wrap = true) {
+
 		if (!conditions) throw new TypeError('No conditions provided.');
+
 		return (wrap ? '(' : '') + conditions.map((condition) => {
+
 			let key = Object.keys(condition)[0];
+
 			if (key.substr(0, 1) == '$') {
 				switch (key) {
 				case '$or':
-					return this._buildConditions(condition[key], 'OR', comparer);
 				case '$and':
-					return this._buildConditions(condition[key], 'AND', comparer);
-				case '$lt':
-					return this._buildConditions(condition[key], operator, '<', false);
-				case '$lte':
-					return this._buildConditions(condition[key], operator, '<=', false);
-				case '$gt':
-					return this._buildConditions(condition[key], operator, '>', false);
-				case '$gte':
-					return this._buildConditions(condition[key], operator, '>=', false);
-				case '$regexp':
-					return this._buildConditions(condition[key], operator, '~*', false);
+					return this._buildConditions(condition[key], key, comparer, true);
+				case '$eq':
 				case '$ne':
-					return this._buildConditions(condition[key], operator, '!=', false);
-				case '$isnot':
-					return this._buildConditions(condition[key], operator, 'IS NOT', false);
+				case '$lt':
+				case '$lte':
+				case '$gt':
+				case '$gte':
+				case '$regexp':
+					return this._buildConditions(condition[key], operator, key, true);
 				default:
-					throw new TypeError(`Unknown operator ${key}.`);
+					throw new TypeError(`Unknown modifier ${key}.`);
 				}
 			}
+
 			if (key.substr(0, 1) == ':') {
-				return `${key.substr(1)} ${comparer} ${this._dbCase(condition[key])}`;
+				return `${key.substr(1)} ${this._comparerMap[comparer]} ${this._dbCase(condition[key])}`;
 			}
+
+			let dbKey = key;
+
+			if (dbKey.indexOf('.') == -1) dbKey = `"${dbKey}"`;
+
+			if (condition[key] == null) {
+				switch (operator) {
+				case '$eq':
+					return `${dbKey} IS NULL`;
+				case '$ne':
+					return `${dbKey} IS NOT NULL`;
+				default:
+					throw new TypeError(`Modifier ${operator} is not usable with \`null\` values.`);
+				}
+			}
+
 			this._queryParameters.push(condition[key]);
-			if (key.indexOf('.') == -1) key = `"${key}"`;
-			return `${key} ${comparer} $${this._queryParameters.length}`;
-		}).filter((part) => part.length).join(` ${operator} `) + (wrap ? ')' : '');
+
+			return `${dbKey} ${this._comparerMap[comparer]} $${this._queryParameters.length}`;
+
+		}).filter((part) => part.length).join(` ${this._operatorMap[operator]} `) + (wrap ? ')' : '');
 	}
 
 	_buildWhere() {
