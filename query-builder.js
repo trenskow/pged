@@ -292,8 +292,11 @@ module.exports = exports = class QueryBuilder {
 	_buildUpdate() {
 		return `SET ${this._updateKeys.map((key, idx) => {
 			let value = this._updateValues[idx];
-			if (value.substr(0, 1) == ':') value = value.substr(1);
-			else {
+			if (value == null) {
+				value = 'NULL';
+			} else if (value.substr(0, 1) == ':') {
+				value = value.substr(1);
+			} else {
 				this._queryParameters.push(value);
 				value = `$${this._queryParameters.length}`;
 			}
