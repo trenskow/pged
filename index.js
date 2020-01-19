@@ -13,7 +13,7 @@ let id = 0;
 let pgOptions;
 let pool;
 
-module.exports = exports = class Db {
+module.exports = exports = class PGed {
 
 	static get pg() {
 		return pgOptions;
@@ -229,5 +229,3 @@ module.exports = exports = class Db {
 	}
 
 };
-
-exports.QueryBuilder = QueryBuilder;
