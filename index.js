@@ -66,9 +66,21 @@ module.exports = exports = class PGed {
 		};
 
 		const _set = async (type, values) => {
-			if (!Array.isArray(values)) values = [values];
+
+			let wasArray = true;
+
+			if (!Array.isArray(values)) {
+				wasArray = false;
+				values = [values];
+			}
+
 			this._cache[type] = this._cache[type] || [];
 			this._cache[type].push(...values);
+
+			if (!wasArray) return values[0];
+
+			return values;
+
 		};
 
 		const _invalidate = async (type, identifiers) => {
@@ -78,7 +90,7 @@ module.exports = exports = class PGed {
 
 		let result = {
 			set: async (type, values) => {
-				this._cacheLock(type, async () => {
+				return this._cacheLock(type, async () => {
 					await _set(type, values);
 				});
 			},
@@ -109,7 +121,7 @@ module.exports = exports = class PGed {
 			update: async (type, identifiers, value) => {
 				return await this._cacheLock(type, async () => {
 					await _invalidate(type, identifiers);
-					await _set(type, [value]);
+					return await _set(type, [value]);
 				});
 			}
 		};
