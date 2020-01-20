@@ -1,6 +1,6 @@
 {
   "name": "@trenskow/pged",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Just a silly little db management and query builder for Postgresql.",
   "main": "index.js",
   "scripts": {
@@ -24,6 +24,6 @@
   "dependencies": {
     "@trenskow/caseit": "^1.0.0",
     "pg": "^7.17.1",
-    "puqeue": "^1.0.0"
+    "puqeue": "^1.0.1"
   }
 }

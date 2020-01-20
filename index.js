@@ -51,7 +51,9 @@ module.exports = exports = class PGed {
 	}
 
 	async _cacheLock(type, todo) {
-		this._cacheQueue[type] = this._cacheQueue[type] || new Puqeue();
+		this._cacheQueue[type] = this._cacheQueue[type] || new Puqeue({
+			name: `pged_${type}_${this._id}`
+		});
 		return await this._cacheQueue[type].add(todo);
 	}
 
