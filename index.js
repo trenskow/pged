@@ -43,8 +43,8 @@ module.exports = exports = class PGed {
 		this._history = [];
 
 		this._cache = {};
-		this._cacheHits = {};
 		this._cacheQueue = {};
+		this._cacheHits = 0;
 
 		this._commit = options.commit !== false || process.env.PG_COMMIT !== 'false';
 
@@ -83,7 +83,7 @@ module.exports = exports = class PGed {
 								this._cache[type].push(result);
 							}
 						}
-					} else{
+					} else {
 						this._cacheHits++;
 					}
 					return result;
