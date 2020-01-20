@@ -57,7 +57,7 @@ module.exports = exports = class PGed {
 		return await this._cacheQueue[type].add(todo);
 	}
 
-	get cache() {
+	cache(type) {
 
 		const matches = (cacheItem, identifiers) => {
 			return Object.keys(identifiers).some((key) => {
@@ -65,7 +65,13 @@ module.exports = exports = class PGed {
 			});
 		};
 
-		const _set = async (type, values) => {
+		const checkType = (value) => {
+			if (!value || Array.isArray(value) || (typeof value !== 'object' && typeof value !== 'function')) {
+				throw new TypeError('Value must be an object.');
+			}
+		};
+
+		const _set = async (values) => {
 
 			let wasArray = true;
 
@@ -73,6 +79,8 @@ module.exports = exports = class PGed {
 				wasArray = false;
 				values = [values];
 			}
+
+			values.forEach(checkType);
 
 			this._cache[type] = this._cache[type] || [];
 			this._cache[type].push(...values);
@@ -83,18 +91,19 @@ module.exports = exports = class PGed {
 
 		};
 
-		const _invalidate = async (type, identifiers) => {
+		const _invalidate = async (identifiers) => {
 			if (!this._cache[type]) return;
 			this._cache[type] = this._cache[type].filter((cacheItem) => !matches(cacheItem, identifiers));
 		};
 
 		let result = {
-			set: async (type, values) => {
+			set: async (values) => {
 				return this._cacheLock(type, async () => {
-					await _set(type, values);
+					if (typeof values === 'function') values = await Promise.resolve(values());
+					await _set(values);
 				});
 			},
-			get: async (type, identifiers, resolver) => {
+			get: async (identifiers, resolver) => {
 				return await this._cacheLock(type, async() => {
 					let result = (this._cache[type] || [])
 						.find((cacheItem) => matches(cacheItem, identifiers));
@@ -113,15 +122,16 @@ module.exports = exports = class PGed {
 				});
 
 			},
-			invalidate: async (type, identifiers) => {
+			invalidate: async (identifiers) => {
 				await this._cacheLock(type, async () => {
-					await _invalidate(type, identifiers);
+					await _invalidate(identifiers);
 				});
 			},
-			update: async (type, identifiers, value) => {
+			update: async (identifiers, value) => {
 				return await this._cacheLock(type, async () => {
-					await _invalidate(type, identifiers);
-					return await _set(type, [value]);
+					if (typeof values === 'function') value = await Promise.resolve(value());
+					await _invalidate(identifiers);
+					return await _set([value]);
 				});
 			}
 		};
