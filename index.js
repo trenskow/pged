@@ -66,15 +66,11 @@ module.exports = exports = class PGed {
 			get: async (type, identifiers, resolver) => {
 				return await this._cacheLock(type, async() => {
 					let result = (this._cache[type] || [])
-						.filter((cacheItem) => {
-							return Object.keys(cacheItem)
-								.some((key) => {
-									return Object.keys(identifiers)
-										.some((identifierKey) => {
-											return cacheItem[key] === identifiers[identifierKey];
-										});
-								});
-						})[0];
+						.find((cacheItem) => {
+							return Object.keys(identifiers).some((key) => {
+								return cacheItem[key] === identifiers[key];
+							});
+						});
 					if (!result) {
 						if (resolver) {
 							result = await resolver();
