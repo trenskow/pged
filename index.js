@@ -133,6 +133,19 @@ module.exports = exports = class PGed {
 					await _invalidate(identifiers);
 					return await _set([value]);
 				});
+			},
+			patch: async (identifiers, delta) => {
+				return await this._cacheLock(type, async () => {
+					if (!this._cache[type]) return;
+					if (typeof delta === 'function') delta = await Promise.resolve(delta());
+					checkType(delta);
+					let idx = this._cache[type].findIndex((cacheItem) => matches(cacheItem, identifiers));
+					if (idx == -1) return;
+					Object.keys(delta).forEach((key) => {
+						this._cache[type][idx][key] = delta[key];
+					});
+					return this._cache[type][idx];
+				});
 			}
 		};
 
