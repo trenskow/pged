@@ -57,10 +57,11 @@ module.exports = exports = class PGed {
 
 	get cache() {
 		let result = {
-			set: async (type, value) => {
+			set: async (type, values) => {
+				if (!Array.isArray(values)) values = [values];
 				await this._cacheLock(type, async () => {
 					this._cache[type] = this._cache[type] || [];
-					this._cache[type].push(value);
+					this._cache[type].push(...values);
 				});
 			},
 			get: async (type, identifiers, resolver) => {
