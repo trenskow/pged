@@ -58,22 +58,34 @@ module.exports = exports = class PGed {
 	}
 
 	get cache() {
+
+		const matches = (cacheItem, identifiers) => {
+			return Object.keys(identifiers).some((key) => {
+				return cacheItem[key] === identifiers[key];
+			});
+		};
+
+		const _set = async (type, values) => {
+			if (!Array.isArray(values)) values = [values];
+			this._cache[type] = this._cache[type] || [];
+			this._cache[type].push(...values);
+		};
+
+		const _invalidate = async (type, identifiers) => {
+			if (!this._cache[type]) return;
+			this._cache[type] = this._cache[type].filter((cacheItem) => !matches(cacheItem, identifiers));
+		};
+
 		let result = {
 			set: async (type, values) => {
-				if (!Array.isArray(values)) values = [values];
-				await this._cacheLock(type, async () => {
-					this._cache[type] = this._cache[type] || [];
-					this._cache[type].push(...values);
+				this._cacheLock(type, async () => {
+					await _set(type, values);
 				});
 			},
 			get: async (type, identifiers, resolver) => {
 				return await this._cacheLock(type, async() => {
 					let result = (this._cache[type] || [])
-						.find((cacheItem) => {
-							return Object.keys(identifiers).some((key) => {
-								return cacheItem[key] === identifiers[key];
-							});
-						});
+						.find((cacheItem) => matches(cacheItem, identifiers));
 					if (!result) {
 						if (resolver) {
 							result = await resolver();
@@ -87,13 +99,27 @@ module.exports = exports = class PGed {
 					}
 					return result;
 				});
+
+			},
+			invalidate: async (type, identifiers) => {
+				await this._cacheLock(type, async () => {
+					await _invalidate(type, identifiers);
+				});
+			},
+			update: async (type, identifiers, value) => {
+				return await this._cacheLock(type, async () => {
+					await _invalidate(type, identifiers);
+					await _set(type, [value]);
+				});
 			}
 		};
+
 		Object.defineProperty(result, 'hits', {
 			get: () => {
 				return this._cacheHits;
 			}
 		});
+		
 		return result;
 	}
 
