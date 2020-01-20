@@ -20,7 +20,6 @@ module.exports = exports = class QueryBuilder {
 		this._options.casing.js = 'camel';
 
 		this._table = caseit(table, this._options.casing.db);
-		this._command = 'SELECT';
 		this._selectKeys = ['*'];
 		this._sortingKeys = [];
 
@@ -61,13 +60,11 @@ module.exports = exports = class QueryBuilder {
 
 	select(keys = ['*']) {
 		if (!Array.isArray(keys)) keys = keys.split(/, ?/);
-		this._command = 'SELECT';
 		this._selectKeys = keys;
 		return this;
 	}
 
 	async count(key = 'id') {
-		this._command = 'SELECT';
 		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)}) AS count`];
 		return await this.first('count');
 	}
@@ -315,9 +312,11 @@ module.exports = exports = class QueryBuilder {
 
 		this._queryParameters = [];
 
-		let parts = [this._command];
+		const command = this._command || 'SELECT';
 
-		switch (this._command) {
+		let parts = [command];
+
+		switch (command) {
 		case 'SELECT':
 			parts = parts.concat([
 				this._buildKeys(this._selectKeys),
@@ -335,7 +334,8 @@ module.exports = exports = class QueryBuilder {
 				this._table,
 				this._buildUpdate(),
 				this._buildWhere(),
-				'RETURNING *'
+				'RETURNING',
+				this._selectKeys.join(', ')
 			]);
 			break;
 		case 'INSERT':
@@ -346,7 +346,8 @@ module.exports = exports = class QueryBuilder {
 				this._buildKeys(this._insertKeys, true),
 				') VALUES (',
 				this._buildInsertValues(),
-				') RETURNING *'
+				') RETURNING',
+				this._selectKeys.join(', ')
 			]);
 			break;
 		case 'DELETE':
