@@ -154,7 +154,7 @@ module.exports = exports = class QueryBuilder {
 				} else if (typeof conditions[key] === 'object' && !(conditions[key] instanceof Date)) {
 					obj[dbKey] = this._deductConditions(conditions[key]);
 				} else {
-					obj[this._dbCase(key)] = conditions[key];
+					obj[dbKey] = conditions[key];
 				}
 				return obj;
 			});
