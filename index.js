@@ -97,7 +97,7 @@ module.exports = exports = class PGed {
 			set: async (values) => {
 				return this._cacheLock(type, async () => {
 					if (typeof values === 'function') values = await Promise.resolve(values());
-					await _set(values);
+					return await _set(values);
 				});
 			},
 			get: async (conditions, resolver) => {
