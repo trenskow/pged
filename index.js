@@ -47,6 +47,8 @@ module.exports = exports = class PGed {
 		this._cacheQueue = {};
 		this._cacheHits = 0;
 
+		this._nullIsUndefined = options.nullIsUndefined !== false;
+
 		this._commit = options.commit !== false || process.env.PG_COMMIT !== 'false';
 
 	}
@@ -172,6 +174,7 @@ module.exports = exports = class PGed {
 		return ((result || {}).rows || []).map((row) => {
 			let newRow = {};
 			Object.keys(row).forEach((key) => {
+				if (this._nullIsUndefined && typeof row[key] === 'object' && !row[key]) return;
 				newRow[caseit(key, this._options.casing.js)] = row[key];
 			});
 			return newRow;
