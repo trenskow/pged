@@ -137,7 +137,7 @@ module.exports = exports = class PGed {
 					if (!this._cache[type]) return;
 					if (typeof delta === 'function') delta = await Promise.resolve(delta());
 					checkType(delta);
-					let obj = from(this.cache[type]).where(identifiers).first();
+					let obj = from(this._cache[type]).where(identifiers).first();
 					Object.keys(delta).forEach((key) => {
 						obj[key] = delta[key];
 					});
