@@ -93,7 +93,7 @@ module.exports = exports = class PGed {
 			});
 		};
 
-		let result = {
+		return {
 			set: async (values) => {
 				return this._cacheLock(type, async () => {
 					if (typeof values === 'function') values = await Promise.resolve(values());
@@ -145,14 +145,11 @@ module.exports = exports = class PGed {
 				});
 			}
 		};
-
-		Object.defineProperty(result, 'hits', {
-			get: () => {
-				return this._cacheHits;
-			}
-		});
 		
-		return result;
+	}
+
+	get cacheHits() {
+		return this._cacheHits;
 	}
 
 	get id() {
