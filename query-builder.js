@@ -237,13 +237,13 @@ module.exports = exports = class QueryBuilder {
 			if (dbKey.indexOf('.') == -1) dbKey = `"${dbKey}"`;
 
 			if (condition[key] == null) {
-				switch (operator) {
+				switch (comparer) {
 				case '$eq':
 					return `${dbKey} IS NULL`;
 				case '$ne':
 					return `${dbKey} IS NOT NULL`;
 				default:
-					throw new TypeError(`Modifier ${operator} is not usable with \`null\` values.`);
+					throw new TypeError(`Modifier ${comparer} is not usable with \`null\` values.`);
 				}
 			}
 
