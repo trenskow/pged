@@ -291,7 +291,7 @@ module.exports = exports = class QueryBuilder {
 			let value = this._updateValues[idx];
 			if (value == null) {
 				value = 'NULL';
-			} else if (value.substr(0, 1) == ':') {
+			} else if (/^:/.test(value)) {
 				value = value.substr(1);
 			} else {
 				this._queryParameters.push(value);
