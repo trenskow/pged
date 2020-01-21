@@ -219,7 +219,7 @@ module.exports = exports = class PGed {
 		this._connectionQueue.add(async () => {
 			this._transactions++;
 			await this._retain();
-			if (this._transaction == 1) {
+			if (this._transactions == 1) {
 				await this._query('BEGIN;');
 			}
 		});
