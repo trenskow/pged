@@ -3,7 +3,8 @@
 const
 	Puqeue = require('puqeue'),
 	caseit = require('@trenskow/caseit'),
-	{ Pool } = require('pg');
+	{ Pool } = require('pg'),
+	from = require('@trenskow/from');
 
 const
 	QueryBuilder = require('./query-builder');
@@ -59,12 +60,6 @@ module.exports = exports = class PGed {
 
 	cache(type) {
 
-		const matches = (cacheItem, identifiers) => {
-			return Object.keys(identifiers).some((key) => {
-				return cacheItem[key] === identifiers[key];
-			});
-		};
-
 		const checkType = (value) => {
 			if (!value || Array.isArray(value) || (typeof value !== 'object' && typeof value !== 'function')) {
 				throw new TypeError('Value must be an object.');
@@ -93,7 +88,9 @@ module.exports = exports = class PGed {
 
 		const _invalidate = async (identifiers) => {
 			if (!this._cache[type]) return;
-			this._cache[type] = this._cache[type].filter((cacheItem) => !matches(cacheItem, identifiers));
+			this._cache[type] = this._cache[type].filter((cacheItem) => {
+				return !from(cacheItem).where(identifiers).first();
+			});
 		};
 
 		let result = {
@@ -103,10 +100,11 @@ module.exports = exports = class PGed {
 					await _set(values);
 				});
 			},
-			get: async (identifiers, resolver) => {
+			get: async (conditions, resolver) => {
 				return await this._cacheLock(type, async() => {
-					let result = (this._cache[type] || [])
-						.find((cacheItem) => matches(cacheItem, identifiers));
+					let result = from(this._cache[type] || [])
+						.where(conditions)
+						.first();
 					if (!result) {
 						if (resolver) {
 							result = await resolver();
@@ -139,12 +137,11 @@ module.exports = exports = class PGed {
 					if (!this._cache[type]) return;
 					if (typeof delta === 'function') delta = await Promise.resolve(delta());
 					checkType(delta);
-					let idx = this._cache[type].findIndex((cacheItem) => matches(cacheItem, identifiers));
-					if (idx == -1) return;
+					let obj = from(this.cache[type]).where(identifiers).first();
 					Object.keys(delta).forEach((key) => {
-						this._cache[type][idx][key] = delta[key];
+						obj[key] = delta[key];
 					});
-					return this._cache[type][idx];
+					return obj;
 				});
 			}
 		};
