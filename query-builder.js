@@ -107,20 +107,19 @@ module.exports = exports = class QueryBuilder {
 		return this;
 	}
 
-	offsetBy(offset) {
-		this._offset = offset;
+	offsetBy(offset = 0) {
+		if (offset > 0) this._offset = offset;
 		return this;
 	}
 
-	limitTo(limit) {
-		this._limit = limit;
+	limitTo(limit = Infinity) {
+		if (limit < Infinity) this._limit = limit;
 		return this;
 	}
 
 	paginated(options = {}) {
-		this._offset = options.offset || 0;
-		this._limit = options.limit || options.count || 0;
-		return this;
+		this.offset(options.offset);
+		return this.limitTo(options.limit || options.count);
 	}
 
 	join(options) {
