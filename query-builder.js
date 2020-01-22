@@ -269,9 +269,13 @@ module.exports = exports = class QueryBuilder {
 
 	_buildSorting() {
 		if (!this._sortingKeys.length) return;
+		const escapeIfNeeded = (value) => {
+			if (value.substr(0, 1) == ':') return value.substr(1);
+			return this._dbCase(value, true);
+		};
 		return `ORDER BY ${this._sortingKeys.map((key) => {
-			if (key.substr(0, 1) == '-') return `${this._dbCase(key.substr(1), true)} DESC`;
-			return this._dbCase(key, true);
+			if (key.substr(0, 1) == '-') return `${escapeIfNeeded(key.substr(1))} DESC`;
+			return escapeIfNeeded(key);
 		}).join(', ')}`;
 	}
 
