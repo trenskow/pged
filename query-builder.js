@@ -335,7 +335,7 @@ module.exports = exports = class QueryBuilder {
 				this._buildUpdate(),
 				this._buildWhere(),
 				'RETURNING',
-				this._selectKeys.join(', ')
+				this._buildKeys(this._selectKeys)
 			]);
 			break;
 		case 'INSERT':
@@ -347,7 +347,7 @@ module.exports = exports = class QueryBuilder {
 				') VALUES (',
 				this._buildInsertValues(),
 				') RETURNING',
-				this._selectKeys.join(', ')
+				this._buildKeys(this._selectKeys)
 			]);
 			break;
 		case 'DELETE':
