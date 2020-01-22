@@ -286,3 +286,8 @@ module.exports = exports = class PGed {
 	}
 
 };
+
+exports.end = async () => {
+	await pool.end();
+	pool = undefined;
+};
