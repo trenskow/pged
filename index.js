@@ -49,7 +49,7 @@ module.exports = exports = class PGed {
 
 		this._nullIsUndefined = options.nullIsUndefined !== false;
 
-		this._commit = options.commit !== false || process.env.PG_COMMIT !== 'false';
+		this._commit = options.commit !== false ;
 
 	}
 
