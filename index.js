@@ -288,6 +288,6 @@ module.exports = exports = class PGed {
 };
 
 exports.end = async () => {
-	await pool.end();
+	if (pool) await pool.end();
 	pool = undefined;
 };
