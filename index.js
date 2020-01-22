@@ -24,6 +24,11 @@ module.exports = exports = class PGed {
 		pgOptions = options;
 	}
 
+	static async end() {
+		if (pool) await pool.end();
+		pool = undefined;
+	}
+
 	constructor(options = {}) {
 
 		pool = pool || new Pool(pgOptions);
@@ -285,9 +290,4 @@ module.exports = exports = class PGed {
 		return this._exec(table);
 	}
 
-};
-
-exports.end = async () => {
-	if (pool) await pool.end();
-	pool = undefined;
 };
