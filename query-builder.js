@@ -137,9 +137,9 @@ module.exports = exports = class QueryBuilder {
 	_deductConditions(conditions) {
 		if (!conditions) throw new TypeError('Conditions must be provided.');
 		if (Array.isArray(conditions)) {
-			return conditions.map((conditions) => {
+			return [].concat(...conditions.map((conditions) => {
 				return this._deductConditions(conditions);
-			});
+			}));
 		} else {
 			if (typeof conditions !== 'object') throw new TypeError('Conditions must be an object.');
 			return Object.keys(conditions).map((key) => {
