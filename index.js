@@ -267,18 +267,25 @@ module.exports = exports = class PGed {
 
 	_exec(table) {
 		return new QueryBuilder(table, this._options, async (queryBuilder) => {
+
 			if (queryBuilder._transaction) await this.beginTransaction();
 			else await this.retain();
+
 			let [query, parameters] = queryBuilder._build();
+
 			let result = this._convertResult(await this._query(query, parameters));
+
 			if (queryBuilder._transaction) await this.endTransaction();
 			else await this.release();
+
 			if (queryBuilder._first === true) {
 				return (result || [])[0];
 			} else if (queryBuilder._first) {
 				return ((result || [])[0] || {})[queryBuilder._first];
 			}
+
 			return result;
+			
 		});
 	}
 

@@ -7,6 +7,8 @@ module.exports = exports = class QueryBuilder {
 
 	constructor(table, options = {}, executor) {
 
+		if (typeof table === 'function') return new Promise(table);
+
 		this._options = options;
 
 		options.casing = options.casing || {};
@@ -28,12 +30,6 @@ module.exports = exports = class QueryBuilder {
 
 		this._executor = executor;
 
-		return this;
-
-	}
-
-	then(...args) {
-		this._promise.then.apply(this._promise, args);
 	}
 
 	catch(onRejected) {
@@ -64,9 +60,9 @@ module.exports = exports = class QueryBuilder {
 		return this;
 	}
 
-	async count(key = 'id') {
+	count(key = 'id') {
 		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)}) AS count`];
-		return await this.first('count');
+		return this.first('count');
 	}
 
 	_deductKeyValues(keysAndValues) {
@@ -81,24 +77,24 @@ module.exports = exports = class QueryBuilder {
 		return [keys, values];
 	}
 
-	async update(keysAndValues) {
+	update(keysAndValues) {
 		this._command = 'UPDATE';
 		[this._updateKeys, this._updateValues] = this._deductKeyValues(keysAndValues);
 		this._transaction = true;
-		return await this.first();
+		return this.first();
 	}
 
-	async insert(keysAndValues) {
+	insert(keysAndValues) {
 		this._command = 'INSERT';
 		[this._insertKeys, this._insertValues] = this._deductKeyValues(keysAndValues);
 		this._transaction = true;
-		return await this.first();
+		return this.first();
 	}
 
-	async delete() {
+	delete() {
 		this._command = 'DELETE';
 		this._transaction = true;
-		return await this._exec();
+		return this;
 	}
 
 	sorted(keys) {
@@ -162,15 +158,11 @@ module.exports = exports = class QueryBuilder {
 		return this;
 	}
 
-	async value() {
-		return await this._exec();
-	}
-
-	async first(key) {
+	first(key) {
 		this._limit = 1;
 		if (key) this._first = key;
 		else this._first = true;
-		return await this._exec();
+		return this;
 	}
 
 	_buildKeys(keys, quote) {
@@ -263,7 +255,7 @@ module.exports = exports = class QueryBuilder {
 		return this._joins.map((join) => {
 			let local = join.local.substr(0,1) == ':' ? this._dbCase(join.local.substr(1)) : `${this._table}.${this._dbCase(join.local)}`;
 			let foreign = join.foreign.substr(0,1) == ':' ? this._dbCase(join.foreign.substr(1)) : `${this._dbCase(join.table)}.${this._dbCase(join.foreign)}`;
-			return `INNER JOIN ${this._dbCase(join.table)} ON ${local} = ${foreign}`;
+			return `JOIN ${this._dbCase(join.table)} ON ${local} = ${foreign}`;
 		}).join(' ');
 	}
 
@@ -366,7 +358,7 @@ module.exports = exports = class QueryBuilder {
 
 	}
 
-	async _exec() {
+	async exec() {
 		return await this._executor(this);
 	}
 
