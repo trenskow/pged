@@ -14,7 +14,8 @@ Just a silly little db management and query builder for Postgresql.
         await db
             .from('users')
             .where({ id: 12 })
-            .update({ username: 'myusername' });
+            .update({ username: 'myusername' })
+            .exec();
         
         return await db
             .from('users')
@@ -25,7 +26,8 @@ Just a silly little db management and query builder for Postgresql.
                     username: 'myusername'
                 }
             })
-            .first();
+            .first()
+            .exec();
     
     });
 
