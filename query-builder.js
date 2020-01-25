@@ -15,11 +15,15 @@ module.exports = exports = class QueryBuilder {
 		options.casing.db = options.casing.db || 'snake';
 		options.casing.js = options.casing.hs || 'camel';
 
+		options.defaultPrimaryKey = options.defaultPrimaryKey || 'id';
+
 		this._table = this._dbCase(table);
 
 		this._options.casing = {};
 		this._options.casing.db = 'snake';
 		this._options.casing.js = 'camel';
+
+		this._defaultPrimaryKey = options.defaultPrimaryKey;
 
 		this._table = caseit(table, this._options.casing.db);
 		this._selectKeys = ['*'];
@@ -65,7 +69,7 @@ module.exports = exports = class QueryBuilder {
 		return this.first('count');
 	}
 
-	_deductKeyValues(keysAndValues) {
+	_deconstructKeyValues(keysAndValues) {
 		if (!keysAndValues) throw new TypeError('Keys and values must be provided.');
 		if (typeof keysAndValues !== 'object') throw new TypeError('Keys and values must be an object.');
 		let keys = [];
@@ -79,14 +83,14 @@ module.exports = exports = class QueryBuilder {
 
 	update(keysAndValues) {
 		this._command = 'UPDATE';
-		[this._updateKeys, this._updateValues] = this._deductKeyValues(keysAndValues);
+		[this._updateKeys, this._updateValues] = this._deconstructKeyValues(keysAndValues);
 		this._transaction = true;
 		return this.first();
 	}
 
 	insert(keysAndValues) {
 		this._command = 'INSERT';
-		[this._insertKeys, this._insertValues] = this._deductKeyValues(keysAndValues);
+		[this._insertKeys, this._insertValues] = this._deconstructKeyValues(keysAndValues);
 		this._transaction = true;
 		return this.first();
 	}
@@ -118,23 +122,11 @@ module.exports = exports = class QueryBuilder {
 		return this.limitTo(options.limit || options.count);
 	}
 
-	join(options) {
-		if (!options) throw new TypeError('Options is required.');
-		if (!Array.isArray(options)) options = [options];
-		options.forEach((options) => {
-			if (!options.table) throw new TypeError('Must suppy foreign table: `options.table`.');
-			if (!options.foreign) throw new TypeError('Must supply foreign key: `options.foreign`.');
-			if (!options.local) throw new TypeError('Must supply local key: `options.local`.');
-			this._joins.push(options);
-		});
-		return this;
-	}
-
-	_deductConditions(conditions) {
+	_formalizeConditions(conditions) {
 		if (!conditions) throw new TypeError('Conditions must be provided.');
 		if (Array.isArray(conditions)) {
 			return [].concat(...conditions.map((conditions) => {
-				return this._deductConditions(conditions);
+				return this._formalizeConditions(conditions);
 			}));
 		} else {
 			if (typeof conditions !== 'object') throw new TypeError('Conditions must be an object.');
@@ -144,7 +136,7 @@ module.exports = exports = class QueryBuilder {
 				if (conditions[key] == null) {
 					obj[dbKey] = null;
 				} else if (typeof conditions[key] === 'object' && !(conditions[key] instanceof Date)) {
-					obj[dbKey] = this._deductConditions(conditions[key]);
+					obj[dbKey] = this._formalizeConditions(conditions[key]);
 				} else {
 					obj[dbKey] = conditions[key];
 				}
@@ -154,7 +146,34 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	where(conditions) {
-		this._conditions = this._deductConditions(conditions);
+		this._conditions = this._formalizeConditions(conditions);
+		return this;
+	}
+
+	join(options) {
+		if (!Array.isArray(options)) options = [options];
+		this._joins.push(
+			...options
+				.filter((options) => options)
+				.map((options) => {
+					if (typeof options !== 'object') throw new TypeError('Option must be an object');
+					if (!options.table) throw new SyntaxError('Missing table.');
+					if (options.local) {
+						options.conditions = {};
+						options.foreign = options.foreign || this._defaultPrimaryKey;
+						let local = options.local.substr(0,1) == ':' ? options.local : `:${this._table}.${this._dbCase(options.local)}`;
+						let foreign = options.foreign.substr(0,1) == ':' ? options.remote : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
+						options.conditions[local] = foreign;
+					}
+					if (options.conditions) {
+						options.conditions = this._formalizeConditions(options.conditions);
+						options.required = options.required || 'both';
+						if (!['none','local','foreign','both'].includes(options.required)) {
+							throw new TypeError('Only `none`, `local`, `foreign`, `both` are supported by `options.required`.');
+						}
+					}
+					return options;
+				}));
 		return this;
 	}
 
@@ -251,11 +270,19 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	_buildJoins() {
-		if (!this._joins.length) return;
 		return this._joins.map((join) => {
-			let local = join.local.substr(0,1) == ':' ? this._dbCase(join.local.substr(1)) : `${this._table}.${this._dbCase(join.local)}`;
-			let foreign = join.foreign.substr(0,1) == ':' ? this._dbCase(join.foreign.substr(1)) : `${this._dbCase(join.table)}.${this._dbCase(join.foreign)}`;
-			return `JOIN ${this._dbCase(join.table)} ON ${local} = ${foreign}`;
+			if (join.conditions) {
+				let type;
+				switch (join.required) {
+				case 'both': type = 'JOIN'; break;
+				case 'local': type = 'LEFT JOIN'; break;
+				case 'foreign': type = 'RIGHT JOIN'; break;
+				case 'none': type = 'OUTER JOIN'; break;
+				}
+				return `${type} ${join.table} ON ${this._buildConditions(join.conditions)}`;
+			} else {
+				return `CROSS JOIN ${join.table}`;
+			}
 		}).join(' ');
 	}
 

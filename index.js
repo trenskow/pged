@@ -33,11 +33,13 @@ module.exports = exports = class PGed {
 
 		pool = pool || new Pool(pgOptions);
 
-		this._options = options;
-
 		options.casing = options.casing || {};
 		options.casing.db = options.casing.db || 'snake';
 		options.casing.js = options.casing.hs || 'camel';
+
+		options.defaultPrimaryKey = options.defaultPrimaryKey || 'id';
+
+		this._options = options;
 
 		this._connectionCount = 0;
 		this._connectionQueue = new Puqeue();
@@ -81,6 +83,8 @@ module.exports = exports = class PGed {
 				wasArray = false;
 				values = [values];
 			}
+
+			values = values.filter((value) => value);
 
 			values.forEach(checkType);
 
