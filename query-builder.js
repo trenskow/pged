@@ -216,7 +216,7 @@ module.exports = exports = class QueryBuilder {
 
 		if (!conditions) throw new TypeError('No conditions provided.');
 
-		return (wrap ? '(' : '') + conditions.map((condition) => {
+		const result = conditions.map((condition) => {
 
 			let key = Object.keys(condition)[0];
 
@@ -261,12 +261,17 @@ module.exports = exports = class QueryBuilder {
 
 			return `${dbKey} ${this._comparerMap[comparer]} $${this._queryParameters.length}`;
 
-		}).filter((part) => part.length).join(` ${this._operatorMap[operator]} `) + (wrap ? ')' : '');
+		}).filter((part) => part.length).join(` ${this._operatorMap[operator]} `);
+		if (wrap && result.length) return `(${result})`;
+		return result;
+
 	}
 
 	_buildWhere() {
 		if (!this._conditions.length) return;
-		return `WHERE ${this._buildConditions(this._conditions)}`;
+		const result = this._buildConditions(this._conditions);
+		if (!result.length) return '';
+		return `WHERE ${result}`;
 	}
 
 	_buildJoins() {
