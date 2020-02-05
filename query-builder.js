@@ -119,7 +119,9 @@ module.exports = exports = class QueryBuilder {
 
 	paginated(options = {}) {
 		this.offsetBy(options.offset);
-		return this.limitTo(options.limit || options.count);
+		this.limitTo(options.limit || options.count);
+		this._paginated = true;
+		return this;
 	}
 
 	_formalizeConditions(conditions) {
@@ -190,7 +192,7 @@ module.exports = exports = class QueryBuilder {
 			let as = key.split(':');
 			if (as.length == 1) return this._dbCase(as[0], quote);
 			return `${this._dbCase(as[0], quote)} AS ${this._dbCase(as[1])}`;
-		}).join(', ');
+		}).concat(this._paginated ? 'COUNT(*) OVER() AS total' : []).join(', ');
 	}
 
 	get _operatorMap() {
@@ -391,7 +393,22 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	async exec() {
-		return await this._executor(this);
+		const rows = await this._executor(this);
+		if (this._paginated && !this._first) {
+			let total;
+			if (rows.length == 0) {
+				delete this._paginated;
+				delete this._offset;
+				delete this._limit;
+				this._sortingKeys = [];
+				total = parseInt(await this.count('*').exec());
+			} else {
+				total = parseInt(((rows || [])[0] || {})['total'] || 0);
+			}
+			rows.forEach((item) => delete item.total);
+			return { total, items: rows };
+		}
+		return rows;
 	}
 
 };

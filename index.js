@@ -77,21 +77,27 @@ module.exports = exports = class PGed {
 
 		const _set = async (values) => {
 
-			let wasArray = true;
+			let toSet = values;
 
-			if (!Array.isArray(values)) {
-				wasArray = false;
-				values = [values];
+			if (Array.isArray(toSet.items) && typeof toSet.total === 'number') {
+				toSet = toSet.items;
 			}
 
-			values = values.filter((value) => value);
+			let wasArray = true;
 
-			values.forEach(checkType);
+			if (!Array.isArray(toSet)) {
+				wasArray = false;
+				toSet = [toSet];
+			}
+
+			toSet = toSet.filter((value) => value);
+
+			toSet.forEach(checkType);
 
 			this._cache[type] = this._cache[type] || [];
-			this._cache[type].push(...values);
+			this._cache[type].push(...toSet);
 
-			if (!wasArray) return values[0];
+			if (!wasArray) return toSet[0];
 
 			return values;
 
