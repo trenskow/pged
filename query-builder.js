@@ -121,7 +121,7 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	paginated(options) {
-		if (!options) return;
+		if (!options) return this;
 		this.offsetBy(options.offset);
 		this.limitTo(options.limit || options.count);
 		this._paginated = true;
