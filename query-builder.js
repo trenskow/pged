@@ -32,6 +32,9 @@ module.exports = exports = class QueryBuilder {
 		this._joins = [];
 		this._conditions = [];
 
+		this._offset = 0;
+		this._limit = Infinity;
+
 		this._executor = executor;
 
 	}
@@ -108,16 +111,17 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	offsetBy(offset = 0) {
-		if (offset > 0) this._offset = offset;
+		this._offset = offset;
 		return this;
 	}
 
 	limitTo(limit = Infinity) {
-		if (limit < Infinity) this._limit = limit;
+		this._limit = limit;
 		return this;
 	}
 
-	paginated(options = {}) {
+	paginated(options) {
+		if (!options) return;
 		this.offsetBy(options.offset);
 		this.limitTo(options.limit || options.count);
 		this._paginated = true;
@@ -311,7 +315,7 @@ module.exports = exports = class QueryBuilder {
 	}
 
 	_buildLimit() {
-		if (!this._limit) return;
+		if ((this._limit || Infinity) == Infinity) return;
 		return `LIMIT ${this._limit}`;
 	}
 
