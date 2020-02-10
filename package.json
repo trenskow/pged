@@ -1,6 +1,6 @@
 {
   "name": "@trenskow/pged",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "description": "Just a silly little db management and query builder for Postgresql.",
   "main": "index.js",
   "scripts": {

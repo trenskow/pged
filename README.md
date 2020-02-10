@@ -5,31 +5,33 @@ Just a silly little db management and query builder for Postgresql.
 
 # Usage
 
-    const PGed = require('@trenskow/pged');
+````javascript
+const PGed = require('@trenskow/pged');
+
+const db = new PGed({ /* options (see below) */});
+
+const updatedUser = await db.transaction(async () => {
+
+    await db
+        .from('users')
+        .where({ id: 12 })
+        .update({ username: 'myusername' })
+        .exec();
     
-    const db = new PGed({ /* options (see below) */});
-    
-    const updatedUser = await db.transaction(async () => {
-    
-        await db
-            .from('users')
-            .where({ id: 12 })
-            .update({ username: 'myusername' })
-            .exec();
-        
-        return await db
-            .from('users')
-            .select('id,username')
-            .where({
-                $or: {
-                    id: 12,
-                    username: 'myusername'
-                }
-            })
-            .first()
-            .exec();
-    
-    });
+    return await db
+        .from('users')
+        .select('id,username')
+        .where({
+            $or: {
+                id: 12,
+                username: 'myusername'
+            }
+        })
+        .first()
+        .exec();
+
+});
+````
 
 In the above example we wrap our operations in a transaction, which automatically triggers connection to the Postgresql server if not present. The transaction is automatically commited if no error occurs, and automatically rolled back if an error does occur.
 
@@ -49,11 +51,13 @@ These options are supported when creating a new `PGed` instance.
 
 To set connection parameters use environment variables or do as below.
 
-    const PGed = require('@trenskow/pged');
+````javascript
+const PGed = require('@trenskow/pged');
 
-    PGed.pg = { /* Options */ };
+PGed.pg = { /* Options */ };
 
-    const db = new PGed({ /* options */ })
+const db = new PGed({ /* options */ })
+````
 
 See the [pg](https://www.npmjs.com/package/pg) package for available environment variables and options.
 
