@@ -330,7 +330,7 @@ module.exports = exports = class QueryBuilder {
 				this._queryParameters.push(value);
 				value = `$${this._queryParameters.length}`;
 			}
-			return `${key} = ${value}`;
+			return `${this._dbCase(key)} = ${value}`;
 		}).join(', ')}`;
 	}
 
