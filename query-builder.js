@@ -168,7 +168,7 @@ module.exports = exports = class QueryBuilder {
 						options.conditions = {};
 						options.foreign = options.foreign || this._defaultPrimaryKey;
 						let local = options.local.substr(0,1) == ':' ? options.local : `:${this._table}.${this._dbCase(options.local)}`;
-						let foreign = options.foreign.substr(0,1) == ':' ? options.foreign : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
+						let foreign = options.foreign.substr(0,1) == ':' ? options.foreign.substr(1) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
 						options.conditions[local] = foreign;
 					}
 					if (options.conditions) {
