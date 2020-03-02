@@ -290,9 +290,9 @@ module.exports = exports = class QueryBuilder {
 				case 'foreign': type = 'RIGHT JOIN'; break;
 				case 'none': type = 'OUTER JOIN'; break;
 				}
-				return `${type} ${join.table} ON ${this._buildConditions(join.conditions)}`;
+				return `${type} ${this._dbCase(join.table)} ON ${this._buildConditions(join.conditions)}`;
 			} else {
-				return `CROSS JOIN ${join.table}`;
+				return `CROSS JOIN ${this._dbCase(join.table)}`;
 			}
 		}).join(' ');
 	}
