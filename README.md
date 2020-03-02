@@ -33,7 +33,7 @@ const updatedUser = await db.transaction(async () => {
 });
 ````
 
-In the above example we wrap our operations in a transaction, which automatically triggers connection to the Postgresql server if not present. The transaction is automatically commited if no error occurs, and automatically rolled back if an error does occur.
+In the above example we wrap our operations in a transaction, which automatically triggers connection to the Postgresql server if not present. The transaction is automatically committed if no error occurs, and automatically rolled back if an error does occur.
 
 Transactions can be inside transactions - the library will figure out when to commit or roll back.
 
@@ -47,7 +47,7 @@ These options are supported when creating a new `PGed` instance.
 | `casing.db` | `String`     | The casing to use in the db. | Any supported by the [caseit](https://www.npmjs.com/package/@trenskow/caseit) package. | `snake` |
 | `casing.js` | `String`     | The casing to use in js. | Same as above | `camel`
 
-### Postgres connection
+### PostgreSQL Connection
 
 To set connection parameters use environment variables or do as below.
 
