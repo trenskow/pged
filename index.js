@@ -265,6 +265,22 @@ module.exports = exports = class PGed {
 		return result;
 	}
 
+	get set() {
+		return {
+			transactionMode: {
+				readCommitted: async () => {
+					await this._query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED;');
+				},
+				repeatableRead: async () => {
+					await this._query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;');
+				},
+				serializable: async () => {
+					await this._query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;');
+				}
+			}
+		};
+	}
+
 	get connectionCount() {
 		return {
 			get: async () => {
