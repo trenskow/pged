@@ -187,7 +187,7 @@ module.exports = exports = class PGed {
 		};
 		this._history.push(info);
 		const result = await this._client.query(query, ...args);
-		info.timing.ms = (new Date()).getTime() - info.timing.getTime();
+		info.timing.ms = (new Date()).getTime() - info.timing.start.getTime();
 		return result;
 	}
 
