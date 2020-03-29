@@ -178,11 +178,15 @@ module.exports = exports = class PGed {
 	}
 
 	async _query(query, ...args) {
-		this._history.push({
+		let history = {
 			query,
 			parameters: args[0]
-		});
-		return await this._client.query(query, ...args);
+		};
+		this._history.push(history);
+		const startTime = new Date();
+		const result = await this._client.query(query, ...args);
+		history.ms = (new Date()).getTime() - startTime.getTime();
+		return result;
 	}
 
 	_convertResult(result) {
