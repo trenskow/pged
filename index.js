@@ -178,14 +178,16 @@ module.exports = exports = class PGed {
 	}
 
 	async _query(query, ...args) {
-		let history = {
+		let info = {
 			query,
-			parameters: args[0]
+			parameters: args[0],
+			timing: {
+				start: new Date()
+			}
 		};
-		this._history.push(history);
-		const startTime = new Date();
+		this._history.push(info);
 		const result = await this._client.query(query, ...args);
-		history.ms = (new Date()).getTime() - startTime.getTime();
+		info.timing.ms = (new Date()).getTime() - info.timing.getTime();
 		return result;
 	}
 
