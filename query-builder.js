@@ -39,10 +39,6 @@ module.exports = exports = class QueryBuilder {
 
 	}
 
-	catch(onRejected) {
-		super.catch(onRejected);
-	}
-
 	_dbCase(input, quote) {
 		return input
 			.split('.')
