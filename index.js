@@ -56,15 +56,19 @@ module.exports = exports = class PGed {
 
 		this._nullIsUndefined = options.nullIsUndefined !== false;
 
-		this._commit = options.commit !== false ;
+		this._commit = options.commit !== false;
+
+		this._cacheQueue = new Puqeue();
 
 	}
 
 	async _cacheLock(type, todo) {
-		this._cacheQueue[type] = this._cacheQueue[type] || new Puqeue({
-			name: `pged_${type}_${this._id}`
+		await this._cacheQueue.add(async () => {
+			this._cacheQueue[type] = this._cacheQueue[type] || new Puqeue({
+				name: `pged_${type}_${this._id}`
+			});
+			return await this._cacheQueue[type].add(todo);
 		});
-		return await this._cacheQueue[type].add(todo);
 	}
 
 	cache(type) {
@@ -75,7 +79,7 @@ module.exports = exports = class PGed {
 			}
 		};
 
-		const _set = async (values) => {
+		const _set = (values) => {
 
 			let toSet = values;
 
@@ -103,7 +107,7 @@ module.exports = exports = class PGed {
 
 		};
 
-		const _invalidate = async (identifiers) => {
+		const _invalidate = (identifiers) => {
 			if (!this._cache[type]) return;
 			this._cache[type] = this._cache[type].filter((cacheItem) => {
 				return !from(cacheItem).where(identifiers).first();
@@ -114,7 +118,7 @@ module.exports = exports = class PGed {
 			set: async (values) => {
 				return this._cacheLock(type, async () => {
 					if (typeof values === 'function') values = await Promise.resolve(values());
-					return await _set(values);
+					return _set(values);
 				});
 			},
 			get: async (conditions, resolver) => {
@@ -139,14 +143,14 @@ module.exports = exports = class PGed {
 			},
 			invalidate: async (identifiers) => {
 				await this._cacheLock(type, async () => {
-					await _invalidate(identifiers);
+					_invalidate(identifiers);
 				});
 			},
 			update: async (identifiers, value) => {
 				return await this._cacheLock(type, async () => {
 					if (typeof value === 'function') value = await Promise.resolve(value());
-					await _invalidate(identifiers);
-					return await _set([value]);
+					_invalidate(identifiers);
+					return _set([value]);
 				});
 			},
 			patch: async (identifiers, delta) => {
@@ -215,7 +219,7 @@ module.exports = exports = class PGed {
 	async _release() {
 		this._connectionCount--;
 		if (this._connectionCount == 0) {
-			this._client.release();
+			await this._client.release();
 			this._client = undefined;
 		}
 	}
@@ -234,8 +238,15 @@ module.exports = exports = class PGed {
 
 	async retained(todo) {
 		await this.retain();
-		let result = await todo(this);
+		let error;
+		let result;
+		try {
+			result = await todo(this);
+		} catch (err) {
+			error = err;
+		}
 		await this.release();
+		if (error) throw error;
 		return result;
 	}
 
@@ -256,7 +267,7 @@ module.exports = exports = class PGed {
 			if (this._transactions == 0) {
 				await this._query(err || !this._commit ? 'ROLLBACK;' : 'COMMIT;');
 			}
-			this._release();
+			await this._release();
 			if (err && opt.rethrow) throw err;
 		});
 	}
@@ -293,7 +304,7 @@ module.exports = exports = class PGed {
 	get connectionCount() {
 		return {
 			get: async () => {
-				return this._connectionQueue.add(async () => {
+				return await this._connectionQueue.add(async () => {
 					return this._connectionCount;
 				});
 			}
@@ -303,16 +314,14 @@ module.exports = exports = class PGed {
 	_exec(table) {
 		return new QueryBuilder(table, this._options, async (queryBuilder) => {
 
-			if (queryBuilder._transaction) await this.beginTransaction();
-			else await this.retain();
-
+			let result;
 			let [query, parameters] = queryBuilder._build();
 
-			let result = this._convertResult(await this._query(query, parameters));
+			const todo = async () => result = this._convertResult(await this._query(query, parameters));
 
-			if (queryBuilder._transaction) await this.endTransaction();
-			else await this.release();
-
+			if (queryBuilder._transaction) await this.transaction(todo);
+			else await this.retained(todo);
+		
 			if (queryBuilder._first === true) {
 				return (result || [])[0];
 			} else if (queryBuilder._first) {
