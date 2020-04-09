@@ -249,7 +249,7 @@ module.exports = exports = class PGed {
 	}
 
 	async beginTransaction() {
-		this._connectionQueue.add(async () => {
+		await this._connectionQueue.add(async () => {
 			this._transactions++;
 			await this._retain();
 			if (this._transactions == 1) {
@@ -259,7 +259,7 @@ module.exports = exports = class PGed {
 	}
 
 	async endTransaction(err, opt = {}) {
-		this._connectionQueue.add(async () => {
+		await this._connectionQueue.add(async () => {
 			opt.rethrow = opt.rethrow !== false;
 			this._transactions--;
 			if (this._transactions == 0) {
