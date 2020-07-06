@@ -36,7 +36,42 @@ module.exports = exports = class QueryBuilder {
 		this._limit = Infinity;
 
 		this._executor = executor;
+		this._state = 'pending';
 
+		this._thens = [];
+
+		this._immediate = setImmediate(() => {
+			this._exec()
+				.then((result) => {
+					if (this._state !== 'pending') return;
+					this._state = 'fulfilled';
+					this._result = result;
+					this._thens.forEach(([fulfilled]) => {
+						fulfilled(result);
+					});
+				})
+				.catch((error) => {
+					if (this._state !== 'pending') return;
+					this._state = 'rejected';
+					this._error = error;
+					this._thens.forEach(([_,rejected]) => {
+						rejected(error);
+					});
+				});
+		});
+
+	}
+
+	then(fulfilled, rejected) {
+		if (this._state === 'fulfilled') {
+			fulfilled(this._result);
+		}
+		else if (this._state === 'rejected') {
+			rejected(this._error);
+		}
+		else {
+			this._thens.push([fulfilled, rejected]);
+		}
 	}
 
 	_dbCase(input, quote) {
@@ -392,7 +427,7 @@ module.exports = exports = class QueryBuilder {
 
 	}
 
-	async exec() {
+	async _exec() {
 		const rows = await this._executor(this);
 		if (this._paginated && !this._first) {
 			let total;
@@ -409,6 +444,10 @@ module.exports = exports = class QueryBuilder {
 			return { total, items: rows };
 		}
 		return rows;
+	}
+
+	exec() {
+		return this;
 	}
 
 };

@@ -114,7 +114,7 @@ module.exports = exports = class PGed {
 
 		return {
 			set: async (values) => {
-				return this._cacheLock(type, async () => {
+				return await this._cacheLock(type, async () => {
 					if (typeof values === 'function') values = await Promise.resolve(values());
 					return _set(values);
 				});
@@ -140,7 +140,7 @@ module.exports = exports = class PGed {
 
 			},
 			invalidate: async (identifiers) => {
-				await this._cacheLock(type, async () => {
+				await this._cacheLock(type, () => {
 					_invalidate(identifiers);
 				});
 			},
@@ -309,34 +309,47 @@ module.exports = exports = class PGed {
 		};
 	}
 
-	_exec(table) {
+	async exec(query, parameters, options = {}) {
+		
+		let result;
+
+		const todo = async () => result = this._convertResult(await this._query(query, parameters));
+
+		if (options.transaction) await this.transaction(todo);
+		else await this.retained(todo);
+	
+		if (options.first === true) {
+			return (result || [])[0];
+		} else if (options.first) {
+			return ((result || [])[0] || {})[options.first];
+		}
+
+		return result;
+
+	}
+
+	_queryBuild(table) {
 		return new QueryBuilder(table, this._options, async (queryBuilder) => {
 
-			let result;
-			let [query, parameters] = queryBuilder._build();
+			const [query, parameters] = queryBuilder._build();
 
-			const todo = async () => result = this._convertResult(await this._query(query, parameters));
-
-			if (queryBuilder._transaction) await this.transaction(todo);
-			else await this.retained(todo);
-		
-			if (queryBuilder._first === true) {
-				return (result || [])[0];
-			} else if (queryBuilder._first) {
-				return ((result || [])[0] || {})[queryBuilder._first];
-			}
-
-			return result;
+			return await this.exec(
+				query,
+				parameters,
+				{ 
+					first: queryBuilder._first,
+					transaction: queryBuilder._transaction
+				});
 			
 		});
 	}
 
 	from(table) {
-		return this._exec(table);
+		return this._queryBuild(table);
 	}
 
 	into(table) {
-		return this._exec(table);
+		return this._queryBuild(table);
 	}
 
 };
