@@ -140,7 +140,7 @@ module.exports = exports = class PGed {
 
 			},
 			invalidate: async (identifiers) => {
-				await this._cacheLock(type, () => {
+				await this._cacheLock(type, async () => {
 					_invalidate(identifiers);
 				});
 			},

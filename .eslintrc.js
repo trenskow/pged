@@ -9,7 +9,6 @@ module.exports = {
 	},
 	'extends': 'eslint:recommended',
 	'rules': {
-		'require-await': 'warn',
 		'indent': [
 			'error',
 			'tab'
