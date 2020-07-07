@@ -438,7 +438,7 @@ module.exports = exports = class QueryBuilder {
 				delete this._offset;
 				delete this._limit;
 				this._sortingKeys = [];
-				total = parseInt(await this.count('*').exec());
+				total = parseInt(await this.count('*')._exec());
 			} else {
 				total = parseInt(((rows || [])[0] || {})['total'] || 0);
 			}
