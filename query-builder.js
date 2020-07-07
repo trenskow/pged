@@ -122,7 +122,7 @@ module.exports = exports = class QueryBuilder {
 		return this.first();
 	}
 
-	insert(keysAndValues) {
+	insert(keysAndValues = {}) {
 		this._command = 'INSERT';
 		[this._insertKeys, this._insertValues] = this._deconstructKeyValues(keysAndValues);
 		this._transaction = true;
