@@ -372,6 +372,11 @@ module.exports = exports = class QueryBuilder {
 		}).join(', ');
 	}
 
+	_buildInsert() {
+		if (!Object.keys(this._insertKeys).length) return 'DEFAULT VALUES';
+		return `(${this._buildKeys(this._insertKeys, true)}) VALUES (${this._buildInsertValues()})`;
+	}
+
 	_build() {
 
 		this._queryParameters = [];
@@ -406,11 +411,8 @@ module.exports = exports = class QueryBuilder {
 			parts = parts.concat([
 				'INTO',
 				this._table,
-				'(',
-				this._buildKeys(this._insertKeys, true),
-				') VALUES (',
-				this._buildInsertValues(),
-				') RETURNING',
+				this._buildInsert(),
+				'RETURNING',
 				this._buildKeys(this._selectKeys)
 			]);
 			break;
