@@ -15,20 +15,18 @@ const updatedUser = await db.transaction(async () => {
     await db
         .from('users')
         .where({ id: 12 })
-        .update({ username: 'myusername' })
-        .exec();
+        .update({ username: 'myusername' });
     
     return await db
         .from('users')
         .select('id,username')
+        .first()
         .where({
             $or: {
                 id: 12,
                 username: 'myusername'
             }
-        })
-        .first()
-        .exec();
+        });
 
 });
 ````
