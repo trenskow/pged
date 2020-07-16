@@ -1,13 +1,14 @@
 'use strict';
 
 const
-	caseit = require('@trenskow/caseit');
+	caseit = require('@trenskow/caseit'),
+	CustomPromise = require('@trenskow/custom-promise');
 
-module.exports = exports = class QueryBuilder {
+module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	constructor(table, options = {}, executor) {
 
-		if (typeof table === 'function') return new Promise(table);
+		super();
 
 		this._options = options;
 
@@ -36,42 +37,17 @@ module.exports = exports = class QueryBuilder {
 		this._limit = Infinity;
 
 		this._executor = executor;
-		this._state = 'pending';
-
-		this._thens = [];
 
 		this._immediate = setImmediate(() => {
 			this._exec()
 				.then((result) => {
-					if (this._state !== 'pending') return;
-					this._state = 'fulfilled';
-					this._result = result;
-					this._thens.forEach(([fulfilled]) => {
-						fulfilled(result);
-					});
+					this._resolve(result);
 				})
 				.catch((error) => {
-					if (this._state !== 'pending') return;
-					this._state = 'rejected';
-					this._error = error;
-					this._thens.forEach(([_,rejected]) => {
-						rejected(error);
-					});
+					this._reject(error);
 				});
 		});
 
-	}
-
-	then(fulfilled, rejected) {
-		if (this._state === 'fulfilled') {
-			fulfilled(this._result);
-		}
-		else if (this._state === 'rejected') {
-			rejected(this._error);
-		}
-		else {
-			this._thens.push([fulfilled, rejected]);
-		}
 	}
 
 	_dbCase(input, quote) {
