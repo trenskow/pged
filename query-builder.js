@@ -159,7 +159,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	where(conditions) {
-		this._conditions = this._formalizeConditions(conditions);
+		this._conditions = this.conditions.concat(this._formalizeConditions(conditions));
 		return this;
 	}
 
