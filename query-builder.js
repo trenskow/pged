@@ -360,7 +360,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	_buildGroup() {
 		if (!this._groupBy) return '';
-		return `GROUP BY ${this._groupBy}`;
+		return `GROUP BY ${this._dbCase(this._groupBy)}`;
 	}
 
 	_build() {
