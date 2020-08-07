@@ -74,6 +74,11 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
+	groupBy(element) {
+		this._groupBy = element;
+		return this;
+	}
+
 	count(key = 'id') {
 		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)}) AS count`];
 		return this.first('count');
@@ -353,6 +358,11 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return `(${this._buildKeys(this._insertKeys, true)}) VALUES (${this._buildInsertValues()})`;
 	}
 
+	_buildGroup() {
+		if (!this._groupBy) return '';
+		return `GROUP BY ${this._groupBy}`;
+	}
+
 	_build() {
 
 		this._queryParameters = [];
@@ -369,6 +379,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				this._table,
 				this._buildJoins(),
 				this._buildWhere(),
+				this._buildGroup(),
 				this._buildSorting(),
 				this._buildOffset(),
 				this._buildLimit()
