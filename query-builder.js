@@ -26,7 +26,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 		this._defaultPrimaryKey = options.defaultPrimaryKey;
 
-		this._table = caseit(table, this._options.casing.db);
+		this._table = this._dbCase(table);
 		this._selectKeys = ['*'];
 		this._sortingKeys = [];
 
@@ -52,13 +52,19 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	_dbCase(input, quote) {
 		return input
-			.split('.')
-			.map((part) => {
-				const cased = caseit(part, this._options.casing.db);
-				if (quote) return `"${cased}"`;
-				return cased;
+			.split(/"|'/)
+			.map((part, idx) => {
+				if (idx % 2 == 1) return part;
+				return part
+					.split('.')
+					.map((part) => {
+						const cased = caseit(part, this._options.casing.db);
+						if (quote) return `"${cased}"`;
+						return cased;
+					})
+					.join('.');
 			})
-			.join('.');
+			.join('');
 	}
 
 	_quoteKey(input) {
