@@ -59,7 +59,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					.split('.')
 					.map((part) => {
 						let doQuote = quote;
-						if (part.substr(0,1) === '!') {
+						if (part.substr(0,1) === '!' && quote) {
 							part = part.substr(1);
 							doQuote = false;
 						}
@@ -70,13 +70,6 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					.join('.');
 			})
 			.join('');
-	}
-
-	_quoteKey(input) {
-		return input
-			.split('.')
-			.map((part) => `"${part}"`)
-			.join('.');
 	}
 
 	select(keys = ['*']) {
@@ -273,7 +266,13 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 			let dbKey = key;
 
-			if (dbKey.indexOf('.') == -1) dbKey = `"${dbKey}"`;
+			if (dbKey.indexOf('.') == -1) {
+				if (dbKey.substr(0,1) === '!') {
+					dbKey = dbKey.substr(1);
+				} else {
+					dbKey = `"${dbKey}"`;
+				}
+			}
 
 			if (condition[key] == null) {
 				switch (comparer) {
