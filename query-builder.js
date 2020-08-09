@@ -58,8 +58,13 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				return part
 					.split('.')
 					.map((part) => {
+						let doQuote = quote;
+						if (part.substr(0,1) === '!') {
+							part = part.substr(1);
+							doQuote = false;
+						}
 						const cased = caseit(part, this._options.casing.db);
-						if (quote) return `"${cased}"`;
+						if (doQuote) return `"${cased}"`;
 						return cased;
 					})
 					.join('.');
@@ -212,10 +217,6 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return keys.map((key) => {
 			if (key.substr(0,1) == ':') return key.substr(1);
 			let as = key.split(':');
-			if (as[0].substr(0,1) == '!') {
-				as[0] = as[0].substr(1);
-				quote = false;
-			}
 			if (as.length == 1) return this._dbCase(as[0], quote);
 			return `${this._dbCase(as[0], quote)} AS ${this._dbCase(as[1])}`;
 		}).concat(this._paginated ? 'COUNT(*) OVER() AS total' : []).join(', ');
