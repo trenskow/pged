@@ -84,7 +84,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	count(key = 'id') {
-		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)}) AS count`];
+		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)})::int AS count`];
 		return this.first('count');
 	}
 
