@@ -180,21 +180,20 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				.map((options) => {
 					if (typeof options !== 'object') throw new TypeError('Option must be an object');
 					if (!options.table) throw new SyntaxError('Missing table.');
-					if (options.local) {
+					if (!options.conditions) {
 						options.conditions = {};
+						options.local = options.local || this._defaultPrimaryKey;
 						options.foreign = options.foreign || this._defaultPrimaryKey;
 						let local = options.local.substr(0,1) == ':' ? this._dbCase(options.local) : `:${this._table}.${this._dbCase(options.local)}`;
 						let foreign = options.foreign.substr(0,1) == ':' ? this._dbCase(options.foreign.substr(1)) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
 						options.conditions[local] = foreign;
 					}
-					if (options.conditions) {
-						options.conditions = this._formalizeConditions(options.conditions);
-						options.required = options.required || 'both';
-						if (!['none','local','foreign','both'].includes(options.required)) {
-							throw new TypeError('Only `none`, `local`, `foreign`, `both` are supported by `options.required`.');
-						}
+					options.conditions = this._formalizeConditions(options.conditions);
+					options.required = options.required || 'both';
+					if (!['none','local','foreign','both'].includes(options.required)) {
+						throw new TypeError('Only `none`, `local`, `foreign`, `both` are supported by `options.required`.');
 					}
-					return options;
+				return options;
 				}));
 		return this;
 	}
