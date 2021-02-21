@@ -11,7 +11,8 @@ module.exports = {
 	'rules': {
 		'indent': [
 			'error',
-			'tab'
+			'tab',
+			{ 'SwitchCase': 1 }
 		],
 		'linebreak-style': [
 			'error',
@@ -44,6 +45,15 @@ module.exports = {
 				'allowEmptyCatch': true
 			}
 		],
-		'require-atomic-updates': 'off'
+		'no-trailing-spaces': [
+			'error', {
+				'ignoreComments': true
+			}
+		],
+		'require-atomic-updates': 'off',
+		'eol-last': [
+			'error',
+			'always'
+		]
 	}
 };

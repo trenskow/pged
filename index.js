@@ -164,7 +164,7 @@ module.exports = exports = class PGed {
 				});
 			}
 		};
-		
+
 	}
 
 	get cacheHits() {
@@ -310,14 +310,14 @@ module.exports = exports = class PGed {
 	}
 
 	async exec(query, parameters, options = {}) {
-		
+
 		let result;
 
 		const todo = async () => result = this._convertResult(await this._query(query, parameters));
 
 		if (options.transaction) await this.transaction(todo);
 		else await this.retained(todo);
-	
+
 		if (options.first === true) {
 			return (result || [])[0];
 		} else if (options.first) {
@@ -336,11 +336,11 @@ module.exports = exports = class PGed {
 			return await this.exec(
 				query,
 				parameters,
-				{ 
+				{
 					first: queryBuilder._first,
 					transaction: queryBuilder._transaction
 				});
-			
+
 		});
 	}
 

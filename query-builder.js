@@ -74,7 +74,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	select(keys = ['*']) {
 		if (!Array.isArray(keys)) keys = keys.split(/, ?/);
-		this._selectKeys = keys;
+		this._selectKeys = (this._selectKeys || []).concat(keys);
 		return this;
 	}
 
@@ -85,7 +85,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	count(key = 'id') {
 		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)})::int AS count`];
-		return this.first('count');
+		return this.first('count', { select: false });
 	}
 
 	_deconstructKeyValues(keysAndValues) {
@@ -193,14 +193,17 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					if (!['none','local','foreign','both'].includes(options.required)) {
 						throw new TypeError('Only `none`, `local`, `foreign`, `both` are supported by `options.required`.');
 					}
-				return options;
+					return options;
 				}));
 		return this;
 	}
 
-	first(key) {
+	first(key, options = { select: true }) {
 		this._limit = 1;
-		if (key) this._first = key;
+		if (key) {
+			if (options.select) this.select(key);
+			this._first = key;
+		}
 		else this._first = true;
 		return this;
 	}
@@ -243,19 +246,19 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 			if (key.substr(0, 1) == '$') {
 				switch (key) {
-				case '$or':
-				case '$and':
-					return this._buildConditions(condition[key], key, comparer, true);
-				case '$eq':
-				case '$ne':
-				case '$lt':
-				case '$lte':
-				case '$gt':
-				case '$gte':
-				case '$regexp':
-					return this._buildConditions(condition[key], operator, key, true);
-				default:
-					throw new TypeError(`Unknown modifier ${key}.`);
+					case '$or':
+					case '$and':
+						return this._buildConditions(condition[key], key, comparer, true);
+					case '$eq':
+					case '$ne':
+					case '$lt':
+					case '$lte':
+					case '$gt':
+					case '$gte':
+					case '$regexp':
+						return this._buildConditions(condition[key], operator, key, true);
+					default:
+						throw new TypeError(`Unknown modifier ${key}.`);
 				}
 			}
 
@@ -275,12 +278,12 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 			if (condition[key] == null) {
 				switch (comparer) {
-				case '$eq':
-					return `${dbKey} IS NULL`;
-				case '$ne':
-					return `${dbKey} IS NOT NULL`;
-				default:
-					throw new TypeError(`Modifier ${comparer} is not usable with \`null\` values.`);
+					case '$eq':
+						return `${dbKey} IS NULL`;
+					case '$ne':
+						return `${dbKey} IS NOT NULL`;
+					default:
+						throw new TypeError(`Modifier ${comparer} is not usable with \`null\` values.`);
 				}
 			}
 
@@ -306,10 +309,10 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			if (join.conditions) {
 				let type;
 				switch (join.required) {
-				case 'both': type = 'JOIN'; break;
-				case 'local': type = 'LEFT JOIN'; break;
-				case 'foreign': type = 'RIGHT JOIN'; break;
-				case 'none': type = 'OUTER JOIN'; break;
+					case 'both': type = 'JOIN'; break;
+					case 'local': type = 'LEFT JOIN'; break;
+					case 'foreign': type = 'RIGHT JOIN'; break;
+					case 'none': type = 'OUTER JOIN'; break;
 				}
 				return `${type} ${this._dbCase(join.table)} ON ${this._buildConditions(join.conditions)}`;
 			} else {
@@ -381,44 +384,44 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		let parts = [command];
 
 		switch (command) {
-		case 'SELECT':
-			parts = parts.concat([
-				this._buildKeys(this._selectKeys),
-				'FROM',
-				this._table,
-				this._buildJoins(),
-				this._buildWhere(),
-				this._buildGroup(),
-				this._buildSorting(),
-				this._buildOffset(),
-				this._buildLimit()
-			]);
-			break;
-		case 'UPDATE':
-			parts = parts.concat([
-				this._table,
-				this._buildUpdate(),
-				this._buildWhere(),
-				'RETURNING',
-				this._buildKeys(this._selectKeys)
-			]);
-			break;
-		case 'INSERT':
-			parts = parts.concat([
-				'INTO',
-				this._table,
-				this._buildInsert(),
-				'RETURNING',
-				this._buildKeys(this._selectKeys)
-			]);
-			break;
-		case 'DELETE':
-			parts = parts.concat([
-				'FROM',
-				this._table,
-				this._buildWhere()
-			]);
-			break;
+			case 'SELECT':
+				parts = parts.concat([
+					this._buildKeys(this._selectKeys),
+					'FROM',
+					this._table,
+					this._buildJoins(),
+					this._buildWhere(),
+					this._buildGroup(),
+					this._buildSorting(),
+					this._buildOffset(),
+					this._buildLimit()
+				]);
+				break;
+			case 'UPDATE':
+				parts = parts.concat([
+					this._table,
+					this._buildUpdate(),
+					this._buildWhere(),
+					'RETURNING',
+					this._buildKeys(this._selectKeys)
+				]);
+				break;
+			case 'INSERT':
+				parts = parts.concat([
+					'INTO',
+					this._table,
+					this._buildInsert(),
+					'RETURNING',
+					this._buildKeys(this._selectKeys)
+				]);
+				break;
+			case 'DELETE':
+				parts = parts.concat([
+					'FROM',
+					this._table,
+					this._buildWhere()
+				]);
+				break;
 		}
 
 		return [parts.filter((part) => part && part.length).join(' '), this._queryParameters];
