@@ -27,7 +27,6 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		this._defaultPrimaryKey = options.defaultPrimaryKey;
 
 		this._table = this._dbCase(table);
-		this._selectKeys = ['*'];
 		this._sortingKeys = [];
 
 		this._joins = [];
@@ -208,7 +207,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
-	_buildKeys(keys, quote) {
+	_buildKeys(keys = ['*'], quote) {
 		return keys.map((key) => {
 			if (key.substr(0,1) == ':') return key.substr(1);
 			let as = key.split(':');
