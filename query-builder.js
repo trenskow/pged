@@ -83,7 +83,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	count(key = 'id') {
-		this._selectKeys = [`:COUNT(${this._table}.${this._dbCase(key)})::int AS count`];
+		this._selectKeys = [`:count(${this._table}.${this._dbCase(key)})::int as count`];
 		return this.first('count', { select: false });
 	}
 
@@ -100,21 +100,21 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	update(keysAndValues) {
-		this._command = 'UPDATE';
+		this._command = 'update';
 		[this._updateKeys, this._updateValues] = this._deconstructKeyValues(keysAndValues);
 		this._transaction = true;
 		return this.first();
 	}
 
 	insert(keysAndValues = {}) {
-		this._command = 'INSERT';
+		this._command = 'insert';
 		[this._insertKeys, this._insertValues] = this._deconstructKeyValues(keysAndValues);
 		this._transaction = true;
 		return this.first();
 	}
 
 	delete() {
-		this._command = 'DELETE';
+		this._command = 'delete';
 		this._transaction = true;
 		return this;
 	}
@@ -207,19 +207,53 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
+	onConflict(keys, action) {
+
+		if (this._command !== 'insert') throw new Error('`onConflict` is only available when inserting.');
+
+		if (!Array.isArray(keys)) keys = keys.split(/, ?/);
+
+		switch (Object.keys(action || {})[0] || 'nothing') {
+			case 'nothing':
+				break;
+			case 'update': {
+				const [keys, values] = this._deconstructKeyValues(action.update);
+				action.update = { keys, values };
+				break;
+			}
+			default:
+				throw new Error('Action `update` is only supported at this moment.');
+		}
+
+		this._onConflict = {
+			keys,
+			action
+		};
+
+		return this;
+
+	}
+
+	_canQuote(key) {
+		if (key === '*') return false;
+		if (key.toLowerCase().includes(' as ')) return false;
+		if (key.includes('(')) return false;
+		return true;
+	}
+
 	_buildKeys(keys = ['*'], quote) {
 		return keys.map((key) => {
 			if (key.substr(0,1) == ':') return key.substr(1);
 			let as = key.split(':');
-			if (as.length == 1) return this._dbCase(as[0], quote);
-			return `${this._dbCase(as[0], quote)} AS ${this._dbCase(as[1])}`;
-		}).concat(this._paginated ? 'COUNT(*) OVER() AS total' : []).join(', ');
+			if (as.length == 1) return this._dbCase(as[0], quote && this._canQuote(key));
+			return `${this._dbCase(as[0], quote)} as ${this._dbCase(as[1])}`;
+		}).concat(this._paginated ? 'count(*) over() as total' : []).join(', ');
 	}
 
 	get _operatorMap() {
 		return {
-			'$or': 'OR',
-			'$and': 'AND'
+			'$or': 'or',
+			'$and': 'and'
 		};
 	}
 
@@ -278,9 +312,9 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			if (condition[key] == null) {
 				switch (comparer) {
 					case '$eq':
-						return `${dbKey} IS NULL`;
+						return `${dbKey} is null`;
 					case '$ne':
-						return `${dbKey} IS NOT NULL`;
+						return `${dbKey} is not null`;
 					default:
 						throw new TypeError(`Modifier ${comparer} is not usable with \`null\` values.`);
 				}
@@ -296,11 +330,12 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	}
 
-	_buildWhere() {
-		if (!this._conditions.length) return;
-		const result = this._buildConditions(this._conditions);
+	_buildWhere(conditions) {
+		conditions = conditions || this._conditions;
+		if (!conditions.length) return;
+		const result = this._buildConditions(conditions);
 		if (!result.length) return '';
-		return `WHERE ${result}`;
+		return `where ${result}`;
 	}
 
 	_buildJoins() {
@@ -308,14 +343,14 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			if (join.conditions) {
 				let type;
 				switch (join.required) {
-					case 'both': type = 'JOIN'; break;
-					case 'local': type = 'LEFT JOIN'; break;
-					case 'foreign': type = 'RIGHT JOIN'; break;
-					case 'none': type = 'OUTER JOIN'; break;
+					case 'both': type = 'join'; break;
+					case 'local': type = 'left join'; break;
+					case 'foreign': type = 'right join'; break;
+					case 'none': type = 'outer join'; break;
 				}
-				return `${type} ${this._dbCase(join.table)} ON ${this._buildConditions(join.conditions)}`;
+				return `${type} ${this._dbCase(join.table)} on ${this._buildConditions(join.conditions)}`;
 			} else {
-				return `CROSS JOIN ${this._dbCase(join.table)}`;
+				return `cross join ${this._dbCase(join.table)}`;
 			}
 		}).join(' ');
 	}
@@ -326,35 +361,39 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			if (value.substr(0, 1) == ':') return value.substr(1);
 			return this._dbCase(value, true);
 		};
-		return `ORDER BY ${this._sortingKeys.map((key) => {
-			if (key.substr(0, 1) == '-') return `${escapeIfNeeded(key.substr(1))} DESC`;
+		return `order by ${this._sortingKeys.map((key) => {
+			if (key.substr(0, 1) == '-') return `${escapeIfNeeded(key.substr(1))} desc`;
 			return escapeIfNeeded(key);
 		}).join(', ')}`;
 	}
 
 	_buildOffset() {
 		if (!this._offset) return;
-		return `OFFSET ${this._offset}`;
+		return `offset ${this._offset}`;
 	}
 
 	_buildLimit() {
 		if ((this._limit || Infinity) == Infinity) return;
-		return `LIMIT ${this._limit}`;
+		return `limit ${this._limit}`;
 	}
 
-	_buildUpdate() {
-		return `SET ${this._updateKeys.map((key, idx) => {
-			let value = this._updateValues[idx];
+	_buildUpdateKeysAndValues(keys, values) {
+		return `set ${keys.map((key, idx) => {
+			let value = values[idx];
 			if (value == null) {
-				value = 'NULL';
+				value = 'null';
 			} else if (/^:/.test(value)) {
 				value = value.substr(1);
 			} else {
 				this._queryParameters.push(value);
 				value = `$${this._queryParameters.length}`;
 			}
-			return `${this._dbCase(key)} = ${value}`;
+			return `${this._dbCase(key, true)} = ${value}`;
 		}).join(', ')}`;
+	}
+
+	_buildUpdate(keys, values) {
+		return this._buildUpdateKeysAndValues(keys || this._updateKeys, values || this._updateValues);
 	}
 
 	_buildInsertValues() {
@@ -365,28 +404,43 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	_buildInsert() {
-		if (!Object.keys(this._insertKeys).length) return 'DEFAULT VALUES';
-		return `(${this._buildKeys(this._insertKeys, true)}) VALUES (${this._buildInsertValues()})`;
+		if (!Object.keys(this._insertKeys).length) return 'default values';
+		return `(${this._buildKeys(this._insertKeys, true)}) values (${this._buildInsertValues()})`;
 	}
 
 	_buildGroup() {
 		if (!this._groupBy) return '';
-		return `GROUP BY ${this._dbCase(this._groupBy)}`;
+		return `group by ${this._dbCase(this._groupBy)}`;
+	}
+
+	_buildOnConflict() {
+		if (!this._onConflict) return '';
+		let result = `on conflict (${this._buildKeys(this._onConflict.keys, true)}) do `;
+		switch (Object.keys(this._onConflict.action || {})[0] || 'nothing') {
+			case 'nothing':
+				result += 'nothing';
+			case 'update':
+				result += `update ${this._buildUpdateKeysAndValues(this._onConflict.action.update.keys, this._onConflict.action.update.values)}`;
+				break;
+			default:
+				break;
+		}
+		return result;
 	}
 
 	_build() {
 
 		this._queryParameters = [];
 
-		const command = this._command || 'SELECT';
+		const command = this._command || 'select';
 
 		let parts = [command];
 
 		switch (command) {
-			case 'SELECT':
+			case 'select':
 				parts = parts.concat([
-					this._buildKeys(this._selectKeys),
-					'FROM',
+					this._buildKeys(this._selectKeys, true),
+					'from',
 					this._table,
 					this._buildJoins(),
 					this._buildWhere(),
@@ -396,27 +450,28 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					this._buildLimit()
 				]);
 				break;
-			case 'UPDATE':
+			case 'update':
 				parts = parts.concat([
 					this._table,
 					this._buildUpdate(),
 					this._buildWhere(),
-					'RETURNING',
-					this._buildKeys(this._selectKeys)
+					'returning',
+					this._buildKeys(this._selectKeys, true)
 				]);
 				break;
-			case 'INSERT':
+			case 'insert':
 				parts = parts.concat([
-					'INTO',
+					'into',
 					this._table,
 					this._buildInsert(),
-					'RETURNING',
-					this._buildKeys(this._selectKeys)
+					this._buildOnConflict(),
+					'returning',
+					this._buildKeys(this._selectKeys, true)
 				]);
 				break;
-			case 'DELETE':
+			case 'delete':
 				parts = parts.concat([
-					'FROM',
+					'from',
 					this._table,
 					this._buildWhere()
 				]);

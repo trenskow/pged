@@ -253,7 +253,7 @@ module.exports = exports = class PGed {
 			this._transactions++;
 			await this._retain();
 			if (this._transactions == 1) {
-				await this._query('BEGIN;');
+				await this._query('begin;');
 			}
 		});
 	}
@@ -263,7 +263,7 @@ module.exports = exports = class PGed {
 			opt.rethrow = opt.rethrow !== false;
 			this._transactions--;
 			if (this._transactions == 0) {
-				await this._query(err || !this._commit ? 'ROLLBACK;' : 'COMMIT;');
+				await this._query(err || !this._commit ? 'rollback;' : 'commit;');
 			}
 			await this._release();
 			if (err && opt.rethrow) throw err;
@@ -287,13 +287,13 @@ module.exports = exports = class PGed {
 		return {
 			transactionMode: {
 				readCommitted: async () => {
-					await this._query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED;');
+					await this._query('set transaction isolation level read committed;');
 				},
 				repeatableRead: async () => {
-					await this._query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;');
+					await this._query('set transaction isolation level repeatable read;');
 				},
 				serializable: async () => {
-					await this._query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;');
+					await this._query('set transaction isolation level serializable;');
 				}
 			}
 		};
