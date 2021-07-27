@@ -58,7 +58,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					.split('.')
 					.map((part) => {
 						let doQuote = quote;
-						if (part.substr(0,1) === '!' && quote) {
+						if (part.substr(0, 1) === '!' && quote) {
 							part = part.substr(1);
 							doQuote = false;
 						}
@@ -72,7 +72,12 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	select(keys = ['*']) {
-		if (!Array.isArray(keys)) keys = keys.split(/, ?/);
+		if (!Array.isArray(keys)) {
+			keys = [].concat(...keys.split('\"').map((key, idx) => {
+				if (idx % 2 == 0) return key.split(/, ?/);
+				return [key];
+			})).filter((key) => key);
+		}
 		this._selectKeys = (this._selectKeys || []).concat(keys);
 		return this;
 	}
@@ -183,13 +188,13 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 						options.conditions = {};
 						options.local = options.local || this._defaultPrimaryKey;
 						options.foreign = options.foreign || this._defaultPrimaryKey;
-						let local = options.local.substr(0,1) == ':' ? this._dbCase(options.local) : `:${this._table}.${this._dbCase(options.local)}`;
-						let foreign = options.foreign.substr(0,1) == ':' ? this._dbCase(options.foreign.substr(1)) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
+						let local = options.local.substr(0, 1) == ':' ? this._dbCase(options.local) : `:${this._table}.${this._dbCase(options.local)}`;
+						let foreign = options.foreign.substr(0, 1) == ':' ? this._dbCase(options.foreign.substr(1)) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
 						options.conditions[local] = foreign;
 					}
 					options.conditions = this._formalizeConditions(options.conditions);
 					options.required = options.required || 'both';
-					if (!['none','local','foreign','both'].includes(options.required)) {
+					if (!['none', 'local', 'foreign', 'both'].includes(options.required)) {
 						throw new TypeError('Only `none`, `local`, `foreign`, `both` are supported by `options.required`.');
 					}
 					return options;
@@ -243,7 +248,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	_buildKeys(keys = ['*'], quote) {
 		return keys.map((key) => {
-			if (key.substr(0,1) == ':') return key.substr(1);
+			if (key.substr(0, 1) == ':') return key.substr(1);
 			let as = key.split(':');
 			if (as.length == 1) return this._dbCase(as[0], quote && this._canQuote(key));
 			return `${this._dbCase(as[0], quote)} as ${this._dbCase(as[1])}`;
@@ -302,7 +307,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			let dbKey = key;
 
 			if (dbKey.indexOf('.') == -1) {
-				if (dbKey.substr(0,1) === '!') {
+				if (dbKey.substr(0, 1) === '!') {
 					dbKey = dbKey.substr(1);
 				} else {
 					dbKey = `"${dbKey}"`;
