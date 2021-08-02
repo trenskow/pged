@@ -15,6 +15,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		options.casing = options.casing || {};
 		options.casing.db = options.casing.db || 'snake';
 		options.casing.js = options.casing.hs || 'camel';
+		options.casing.json = options.casing.json || 'camel';
 
 		options.defaultPrimaryKey = options.defaultPrimaryKey || 'id';
 
@@ -31,6 +32,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 		this._joins = [];
 		this._conditions = [];
+		this._having = [];
 
 		this._offset = 0;
 		this._limit = Infinity;
@@ -62,9 +64,12 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 							part = part.substr(1);
 							doQuote = false;
 						}
-						const cased = caseit(part, this._options.casing.db);
-						if (doQuote) return `"${cased}"`;
-						return cased;
+						part = part
+							.split('->')
+							.map((subpart, idx) => caseit(subpart, idx == 0 ? this._options.casing.db : this._options.casing.json))
+							.map((subpart) => doQuote ? `"${subpart}"` : subpart)
+							.join('->');
+						return part;
 					})
 					.join('.');
 			})
@@ -239,6 +244,11 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	}
 
+	having(conditions) {
+		this._having = this._having.concat(this._formalizeConditions(conditions));
+		return this;
+	}
+
 	_canQuote(key) {
 		if (key === '*') return false;
 		if (key.toLowerCase().includes(' as ')) return false;
@@ -264,14 +274,31 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	get _comparerMap() {
 		return {
-			'$eq': '=',
-			'$ne': '!=',
-			'$lt': '<',
-			'$lte': '<=',
-			'$gt': '>',
-			'$gte': '>=',
-			'$regexp': '~*'
+			$eq: '=',
+			$ne: '!=',
+			$neq: '!=',
+			$lt: '<',
+			$lte: '<=',
+			$gt: '>',
+			$gte: '>=',
+			$regexp: '~*',
+			$jsonContains: '@>',
+			$jsonNotContains: '@>'
 		};
+	}
+
+	get _comparerPrefixMap() {
+		return {
+			$jsonNotContains: 'not'
+		};
+	}
+
+	_buildCondition(lhs, comparer, rhs) {
+		const casedComparer = caseit(comparer)
+		const condition = `${lhs} ${this._comparerMap[casedComparer]} ${rhs}`;
+		const prefix = this._comparerPrefixMap[casedComparer];
+		if (!prefix) return condition;
+		return `${prefix} (${condition})`;
 	}
 
 	_buildConditions(conditions, operator = '$and', comparer = '$eq', wrap = true) {
@@ -283,25 +310,28 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			let key = Object.keys(condition)[0];
 
 			if (key.substr(0, 1) == '$') {
-				switch (key) {
+				switch (caseit(key)) {
 					case '$or':
 					case '$and':
 						return this._buildConditions(condition[key], key, comparer, true);
 					case '$eq':
 					case '$ne':
+					case '$neq':
 					case '$lt':
 					case '$lte':
 					case '$gt':
 					case '$gte':
 					case '$regexp':
+					case '$jsonContains':
+					case '$jsonNotContains':
 						return this._buildConditions(condition[key], operator, key, true);
 					default:
-						throw new TypeError(`Unknown modifier ${key}.`);
+						throw new TypeError(`Unknown modifier ${caseit(key)}.`);
 				}
 			}
 
 			if (key.substr(0, 1) == ':') {
-				return `${key.substr(1)} ${this._comparerMap[comparer]} ${this._dbCase(condition[key])}`;
+				return this._buildCondition(key.substr(1), comparer, this._dbCase(condition[key]));
 			}
 
 			let dbKey = key;
@@ -310,7 +340,10 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				if (dbKey.substr(0, 1) === '!') {
 					dbKey = dbKey.substr(1);
 				} else {
-					dbKey = `"${dbKey}"`;
+					dbKey = dbKey
+						.split('->')
+						.map((part) => `"${part}"`)
+						.join('->');
 				}
 			}
 
@@ -327,7 +360,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 			this._queryParameters.push(condition[key]);
 
-			return `${dbKey} ${this._comparerMap[comparer]} $${this._queryParameters.length}`;
+			return this._buildCondition(dbKey, comparer, `$${this._queryParameters.length}`);
 
 		}).filter((part) => part.length).join(` ${this._operatorMap[operator]} `);
 		if (wrap && result.length) return `(${result})`;
@@ -335,12 +368,16 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	}
 
-	_buildWhere(conditions) {
+	_buildWhere(conditions, statement = 'where') {
 		conditions = conditions || this._conditions;
 		if (!conditions.length) return;
 		const result = this._buildConditions(conditions);
 		if (!result.length) return '';
-		return `where ${result}`;
+		return `${statement} ${result}`;
+	}
+
+	_buildHaving() {
+		return this._buildWhere(this._having, 'having');
 	}
 
 	_buildJoins() {
@@ -450,6 +487,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					this._buildJoins(),
 					this._buildWhere(),
 					this._buildGroup(),
+					this._buildHaving(),
 					this._buildSorting(),
 					this._buildOffset(),
 					this._buildLimit()
