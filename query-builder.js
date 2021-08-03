@@ -166,7 +166,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				const dbKey = this._dbCase(key);
 				if (conditions[key] == null) {
 					obj[dbKey] = null;
-				} else if (typeof conditions[key] === 'object' && !(conditions[key] instanceof Date)) {
+				} else if (typeof conditions[key] === 'object' && !Array.isArray(conditions[key]) && !(conditions[key] instanceof Date)) {
 					obj[dbKey] = this._formalizeConditions(conditions[key]);
 				} else {
 					obj[dbKey] = conditions[key];
@@ -358,9 +358,16 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				}
 			}
 
-			this._queryParameters.push(condition[key]);
-
-			return this._buildCondition(dbKey, comparer, `$${this._queryParameters.length}`);
+			if (!Array.isArray(condition[key])) {
+				this._queryParameters.push(condition[key]);
+				return this._buildCondition(dbKey, comparer, `$${this._queryParameters.length}`);
+			} else {
+				const values = condition[key].map((value) => {
+					this._queryParameters.push(value);
+					return `$${this._queryParameters.length}`;
+				});
+				return this._buildCondition(dbKey, comparer, `any(array[${values.join(',')}])`);
+			}
 
 		}).filter((part) => part.length).join(` ${this._operatorMap[operator]} `);
 		if (wrap && result.length) return `(${result})`;
