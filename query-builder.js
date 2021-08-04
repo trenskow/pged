@@ -153,6 +153,13 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
+	_areConditions(object) {
+		if (Array.isArray(object)) {
+			return object.every((value) => typeof value === 'object' && !(value instanceof Date));
+		}
+		return true;
+	}
+
 	_formalizeConditions(conditions) {
 		if (!conditions) throw new TypeError('Conditions must be provided.');
 		if (Array.isArray(conditions)) {
@@ -166,7 +173,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				const dbKey = this._dbCase(key);
 				if (conditions[key] == null) {
 					obj[dbKey] = null;
-				} else if (typeof conditions[key] === 'object' && !Array.isArray(conditions[key]) && !(conditions[key] instanceof Date)) {
+				} else if (typeof conditions[key] === 'object' && this._areConditions(conditions[key]) && !(conditions[key] instanceof Date)) {
 					obj[dbKey] = this._formalizeConditions(conditions[key]);
 				} else {
 					obj[dbKey] = conditions[key];
