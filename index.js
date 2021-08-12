@@ -44,7 +44,10 @@ module.exports = exports = class PGed {
 		this._connectionCount = 0;
 		this._connectionQueue = new Puqeue();
 
-		this._transactions = 0;
+		this._transactions = options.transactions || {};
+		this._transactions.mode = this._transactions.mode = options.transactions.mode || 'readCommitted';
+		this._transactions.always = this._transactions.always || false;
+		this._transactions.count = 0;
 
 		this._id = id++;
 
@@ -60,115 +63,6 @@ module.exports = exports = class PGed {
 
 		this._cacheQueue = new Puqeue();
 
-	}
-
-	async _cacheLock(type, todo) {
-		this._cacheQueue[type] = this._cacheQueue[type] || new Puqeue({
-			name: `pged_${type}_${this._id}`
-		});
-		return await this._cacheQueue[type].add(todo);
-	}
-
-	cache(type) {
-
-		const checkType = (value) => {
-			if (!value || Array.isArray(value) || (typeof value !== 'object' && typeof value !== 'function')) {
-				throw new TypeError('Value must be an object.');
-			}
-		};
-
-		const _set = (values) => {
-
-			let toSet = values;
-
-			if (Array.isArray(toSet.items) && typeof toSet.total === 'number') {
-				toSet = toSet.items;
-			}
-
-			let wasArray = true;
-
-			if (!Array.isArray(toSet)) {
-				wasArray = false;
-				toSet = [toSet];
-			}
-
-			toSet = toSet.filter((value) => value);
-
-			toSet.forEach(checkType);
-
-			this._cache[type] = this._cache[type] || [];
-			this._cache[type].push(...toSet);
-
-			if (!wasArray) return toSet[0];
-
-			return values;
-
-		};
-
-		const _invalidate = (identifiers) => {
-			if (!this._cache[type]) return;
-			this._cache[type] = this._cache[type].filter((cacheItem) => {
-				return !from(cacheItem).where(identifiers).first();
-			});
-		};
-
-		return {
-			set: async (values) => {
-				return await this._cacheLock(type, async () => {
-					if (typeof values === 'function') values = await Promise.resolve(values());
-					return _set(values);
-				});
-			},
-			get: async (conditions, resolver) => {
-				return await this._cacheLock(type, async() => {
-					let result = from(this._cache[type] || [])
-						.where(conditions)
-						.first();
-					if (!result) {
-						if (resolver) {
-							result = await resolver();
-							if (result) {
-								this._cache[type] = this._cache[type] || [];
-								this._cache[type].push(result);
-							}
-						}
-					} else {
-						this._cacheHits++;
-					}
-					return result;
-				});
-
-			},
-			invalidate: async (identifiers) => {
-				await this._cacheLock(type, async () => {
-					_invalidate(identifiers);
-				});
-			},
-			update: async (identifiers, value) => {
-				return await this._cacheLock(type, async () => {
-					if (typeof value === 'function') value = await Promise.resolve(value());
-					_invalidate(identifiers);
-					return _set([value]);
-				});
-			},
-			patch: async (identifiers, delta) => {
-				return await this._cacheLock(type, async () => {
-					if (!this._cache[type]) return;
-					if (typeof delta === 'function') delta = await Promise.resolve(delta());
-					checkType(delta);
-					let obj = from(this._cache[type]).where(identifiers).first();
-					Object.keys(delta).forEach((key) => {
-						obj[key] = delta[key];
-					});
-					return obj;
-				});
-			}
-		};
-
-	}
-
-	get cacheHits() {
-		return this._cacheHits;
 	}
 
 	get id() {
@@ -250,9 +144,12 @@ module.exports = exports = class PGed {
 
 	async beginTransaction() {
 		await this._connectionQueue.add(async () => {
-			this._transactions++;
+			this._transactions.count++;
 			await this._retain();
-			if (this._transactions == 1) {
+			if (this._transactions.count == 1) {
+				if (this._transactions.mode !== 'readCommitted') {
+					await this.set.transactionMode[this._transactions.mode]();
+				}
 				await this._query('begin;');
 			}
 		});
@@ -261,8 +158,8 @@ module.exports = exports = class PGed {
 	async endTransaction(err, opt = {}) {
 		await this._connectionQueue.add(async () => {
 			opt.rethrow = opt.rethrow !== false;
-			this._transactions--;
-			if (this._transactions == 0) {
+			this._transactions.count--;
+			if (this._transactions.count == 0) {
 				await this._query(err || !this._commit ? 'rollback;' : 'commit;');
 			}
 			await this._release();
@@ -315,7 +212,7 @@ module.exports = exports = class PGed {
 
 		const todo = async () => result = this._convertResult(await this._query(query, parameters));
 
-		if (options.transaction) await this.transaction(todo);
+		if (this._transactions.always || options.transaction) await this.transaction(todo);
 		else await this.retained(todo);
 
 		if (options.first === true) {
