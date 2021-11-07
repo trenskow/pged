@@ -1,6 +1,6 @@
 {
   "name": "@trenskow/pged",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Just a silly little db management and query builder for PostgreSQL.",
   "main": "index.js",
   "scripts": {
@@ -22,10 +22,10 @@
   },
   "homepage": "https://github.com/trenskow/pged#readme",
   "dependencies": {
-    "@trenskow/caseit": "^1.0.1",
+    "@trenskow/caseit": "^1.1.0",
     "@trenskow/custom-promise": "^0.9.1",
-    "@trenskow/from": "^1.1.8",
-    "pg": "^8.5.1",
-    "puqeue": "^1.0.2"
+    "@trenskow/from": "^1.1.11",
+    "pg": "^8.7.1",
+    "puqeue": "^1.0.5"
   }
 }
