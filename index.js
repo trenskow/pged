@@ -3,8 +3,7 @@
 const
 	Puqeue = require('puqeue'),
 	caseit = require('@trenskow/caseit'),
-	{ Pool } = require('pg'),
-	from = require('@trenskow/from');
+	{ Pool } = require('pg');
 
 const
 	QueryBuilder = require('./query-builder');
