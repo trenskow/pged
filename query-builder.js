@@ -1,14 +1,11 @@
 'use strict';
 
 const
-	caseit = require('@trenskow/caseit'),
-	CustomPromise = require('@trenskow/custom-promise');
+	caseit = require('@trenskow/caseit');
 
-module.exports = exports = class QueryBuilder extends CustomPromise {
+module.exports = exports = class QueryBuilder {
 
 	constructor(table, options = {}, executor) {
-
-		super();
 
 		this._options = options;
 
@@ -39,16 +36,6 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 		this._executor = executor;
 
-		this._immediate = setImmediate(() => {
-			this._exec()
-				.then((result) => {
-					this._resolve(result);
-				})
-				.catch((error) => {
-					this._reject(error);
-				});
-		});
-
 	}
 
 	_dbCase(input, quote) {
@@ -78,7 +65,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	select(keys = ['*']) {
 		if (!Array.isArray(keys)) {
-			keys = [].concat(...keys.split('\"').map((key, idx) => {
+			keys = [].concat(...keys.split('"').map((key, idx) => {
 				if (idx % 2 == 0) return key.split(/, ?/);
 				return [key];
 			})).filter((key) => key);
@@ -301,7 +288,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	_buildCondition(lhs, comparer, rhs) {
-		const casedComparer = caseit(comparer)
+		const casedComparer = caseit(comparer);
 		const condition = `${lhs} ${this._comparerMap[casedComparer]} ${rhs}`;
 		const prefix = this._comparerPrefixMap[casedComparer];
 		if (!prefix) return condition;
@@ -475,6 +462,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		switch (Object.keys(this._onConflict.action || {})[0] || 'nothing') {
 			case 'nothing':
 				result += 'nothing';
+				break;
 			case 'update':
 				result += `update ${this._buildUpdateKeysAndValues(this._onConflict.action.update.keys, this._onConflict.action.update.values)}`;
 				break;
@@ -558,8 +546,8 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return rows;
 	}
 
-	exec() {
-		return this;
+	async go() {
+		return await this._exec();
 	}
 
 };

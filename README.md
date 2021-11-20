@@ -15,7 +15,8 @@ const updatedUser = await db.transaction(async () => {
     await db
         .from('users')
         .where({ id: 12 })
-        .update({ username: 'myusername' });
+        .update({ username: 'myusername' })
+        .go();
     
     return await db
         .from('users')
@@ -26,7 +27,8 @@ const updatedUser = await db.transaction(async () => {
                 id: 12,
                 username: 'myusername'
             }
-        });
+        })
+        .go();
 
 });
 ````
@@ -39,11 +41,11 @@ Transactions can be inside transactions - the library will figure out when to co
 
 These options are supported when creating a new `PGed` instance.
 
-| Name        | Type         | Description | Values | Default    |
-|:------------|:------------:|:------------|:-------|:-----------|
-| `casing`    | `Object`     | See below
-| `casing.db` | `String`     | The casing to use in the db. | Any supported by the [caseit](https://www.npmjs.com/package/@trenskow/caseit) package. | `snake` |
-| `casing.js` | `String`     | The casing to use in js. | Same as above | `camel`
+| Name        |   Type   | Description                  | Values                                                                                 | Default |
+| :---------- | :------: | :--------------------------- | :------------------------------------------------------------------------------------- | :------ |
+| `casing`    | `Object` | See below                    |
+| `casing.db` | `String` | The casing to use in the db. | Any supported by the [caseit](https://www.npmjs.com/package/@trenskow/caseit) package. | `snake` |
+| `casing.js` | `String` | The casing to use in js.     | Same as above                                                                          | `camel` |
 
 ### PostgreSQL Connection
 
