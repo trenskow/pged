@@ -1,11 +1,14 @@
 'use strict';
 
 const
-	caseit = require('@trenskow/caseit');
+	caseit = require('@trenskow/caseit'),
+	CustomPromise = require('@trenskow/custom-promise');
 
-module.exports = exports = class QueryBuilder {
+module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	constructor(table, options = {}, executor) {
+
+		super();
 
 		this._options = options;
 
@@ -546,8 +549,11 @@ module.exports = exports = class QueryBuilder {
 		return rows;
 	}
 
-	async go() {
-		return await this._exec();
+	then(resolve, reject) {
+		super.then(resolve, reject);
+		this._exec()
+			.then((...args) => this._resolve(...args))
+			.catch((error) => this._reject(error));
 	}
 
 };
