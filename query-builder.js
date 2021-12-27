@@ -280,7 +280,8 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			$gte: '>=',
 			$regexp: '~*',
 			$jsonContains: '@>',
-			$jsonNotContains: '@>'
+			$jsonNotContains: '@>',
+			$jsonArrayContains: '?'
 		};
 	}
 
@@ -321,6 +322,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					case '$regexp':
 					case '$jsonContains':
 					case '$jsonNotContains':
+					case 'jsonArrayContains':
 						return this._buildConditions(condition[key], operator, key, true);
 					default:
 						throw new TypeError(`Unknown modifier ${caseit(key)}.`);
