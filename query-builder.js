@@ -421,7 +421,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	_buildLimit() {
-		if ((this._limit || Infinity) == Infinity) return;
+		if (typeof this._limit === 'undefined') return;
 		return `limit ${this._limit}`;
 	}
 
