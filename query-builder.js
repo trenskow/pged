@@ -35,7 +35,6 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		this._having = [];
 
 		this._offset = 0;
-		this._limit = Infinity;
 
 		this._executor = executor;
 
@@ -130,7 +129,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
-	limitTo(limit = Infinity) {
+	limitTo(limit) {
 		this._limit = limit;
 		return this;
 	}
