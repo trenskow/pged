@@ -258,7 +258,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			let as = key.split(':');
 			if (as.length == 1) return this._dbCase(as[0], quote && this._canQuote(key));
 			return `${this._dbCase(as[0], quote)} as ${this._dbCase(as[1])}`;
-		}).concat(this._paginated ? 'count(*) over() as total' : []).join(', ');
+		}).concat(this._paginated ? `count(${this._table}.*) over() as total` : []).join(', ');
 	}
 
 	get _operatorMap() {
