@@ -213,6 +213,22 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
+	sum(key) {
+
+		if (key.key) {
+			if (key.table) key = `"${this._dbCase(key.table)}"."${this._dbCase(key.key)}"`;
+			else key = `"${this._dbCase(key.key)}"`;
+		}
+
+		this._selectKeys = [`:sum(${key}) AS sum`];
+		this._limit = 1;
+		this._first = 'sum';
+		this._defaultResult = 0;
+
+		return this;
+
+	}
+
 	onConflict(keys, action) {
 
 		if (this._command !== 'insert') throw new Error('`onConflict` is only available when inserting.');

@@ -229,13 +229,19 @@ module.exports = exports = class PGed {
 
 			const [query, parameters] = queryBuilder._build();
 
-			return await this.exec(
+			let result = await this.exec(
 				query,
 				parameters,
 				{
 					first: queryBuilder._first,
 					transaction: queryBuilder._transaction
 				});
+
+			if (['null', 'undefined'].includes(typeof result)) {
+				result = queryBuilder._defaultResult;
+			}
+
+			return result;
 
 		});
 	}
