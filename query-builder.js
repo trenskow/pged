@@ -49,8 +49,8 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 					.split('.')
 					.map((part) => {
 						let doQuote = quote;
-						if (part.substr(0, 1) === '!' && quote) {
-							part = part.substr(1);
+						if (part.substring(0, 1) === '!' && quote) {
+							part = part.substring(1);
 							doQuote = false;
 						}
 						part = part
@@ -189,8 +189,8 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 						options.conditions = {};
 						options.local = options.local || this._defaultPrimaryKey;
 						options.foreign = options.foreign || this._defaultPrimaryKey;
-						let local = options.local.substr(0, 1) == ':' ? this._dbCase(options.local) : `:${this._table}.${this._dbCase(options.local)}`;
-						let foreign = options.foreign.substr(0, 1) == ':' ? this._dbCase(options.foreign.substr(1)) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
+						let local = options.local.substring(0, 1) == ':' ? this._dbCase(options.local) : `:${this._table}.${this._dbCase(options.local)}`;
+						let foreign = options.foreign.substring(0, 1) == ':' ? this._dbCase(options.foreign.substring(1)) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
 						options.conditions[local] = foreign;
 					}
 					options.conditions = this._formalizeConditions(options.conditions);
@@ -270,7 +270,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	_buildKeys(keys = ['*'], quote) {
 		return keys.map((key) => {
-			if (key.substr(0, 1) == ':') return key.substr(1);
+			if (key.substring(0, 1) == ':') return key.substring(1);
 			let as = key.split(':');
 			if (as.length == 1) return this._dbCase(as[0], quote && this._canQuote(key));
 			return `${this._dbCase(as[0], quote)} as ${this._dbCase(as[1])}`;
@@ -322,7 +322,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 			let key = Object.keys(condition)[0];
 
-			if (key.substr(0, 1) == '$') {
+			if (key.substring(0, 1) == '$') {
 				switch (caseit(key)) {
 					case '$or':
 					case '$and':
@@ -344,15 +344,15 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 				}
 			}
 
-			if (key.substr(0, 1) == ':') {
-				return this._buildCondition(key.substr(1), comparer, this._dbCase(condition[key]));
+			if (key.substring(0, 1) == ':') {
+				return this._buildCondition(key.substring(1), comparer, this._dbCase(condition[key]));
 			}
 
 			let dbKey = key;
 
 			if (dbKey.indexOf('.') == -1) {
-				if (dbKey.substr(0, 1) === '!') {
-					dbKey = dbKey.substr(1);
+				if (dbKey.substring(0, 1) === '!') {
+					dbKey = dbKey.substring(1);
 				} else {
 					dbKey = dbKey
 						.split('->')
@@ -421,11 +421,11 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	_buildSorting() {
 		if (!this._sortingKeys.length) return;
 		const escapeIfNeeded = (value) => {
-			if (value.substr(0, 1) == ':') return value.substr(1);
+			if (value.substring(0, 1) == ':') return value.substring(1);
 			return this._dbCase(value, true);
 		};
 		return `order by ${this._sortingKeys.map((key) => {
-			if (key.substr(0, 1) == '-') return `${escapeIfNeeded(key.substr(1))} desc`;
+			if (key.substring(0, 1) == '-') return `${escapeIfNeeded(key.substring(1))} desc`;
 			return escapeIfNeeded(key);
 		}).join(', ')}`;
 	}
@@ -446,7 +446,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			if (value == null) {
 				value = 'null';
 			} else if (/^:/.test(value)) {
-				value = value.substr(1);
+				value = value.substring(1);
 			} else {
 				this._queryParameters.push(value);
 				value = `$${this._queryParameters.length}`;
