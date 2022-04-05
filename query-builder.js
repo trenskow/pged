@@ -118,9 +118,17 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		return this;
 	}
 
-	sorted(keys) {
-		if (!Array.isArray(keys)) keys = keys.split(/, ?/);
-		this._sortingKeys = keys;
+	sorted(sortingKeys) {
+		if (typeof sortingKeys === 'string') sortingKeys = sortingKeys.split(/, ?/);
+		if (!Array.isArray(sortingKeys)) sortingKeys = [sortingKeys];
+		sortingKeys = sortingKeys.map((sortingKey) => {
+			if (typeof sortingKey === 'string') return {
+				key: sortingKey.substring(0, 1) === '-' ? sortingKey.substring(1) : sortingKey,
+				order: sortingKey.substring(0, 1) === '-' ? 'desc' : 'asc'
+			};
+			return sortingKey;
+		});
+		this._sortingKeys = this._sortingKeys.concat(sortingKeys);
 		return this;
 	}
 
@@ -419,15 +427,24 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	_buildSorting() {
+
 		if (!this._sortingKeys.length) return;
+
 		const escapeIfNeeded = (value) => {
 			if (value.substring(0, 1) == ':') return value.substring(1);
 			return this._dbCase(value, true);
 		};
-		return `order by ${this._sortingKeys.map((key) => {
-			if (key.substring(0, 1) == '-') return `${escapeIfNeeded(key.substring(1))} desc`;
-			return escapeIfNeeded(key);
+
+		return `order by ${this._sortingKeys.map((sortingKey) => {
+			let condition = escapeIfNeeded(sortingKey.key);
+			if (Array.isArray(sortingKey.values)) {
+				condition = `case ${this._dbCase(sortingKey.key)} ${sortingKey.values.map((value, idx) => {
+					return `when '${value}' then ${idx}`;
+				}).join(' ')} end`;
+			}
+			return `${condition}${sortingKey.order === 'desc' ? ' desc' : ''}`;
 		}).join(', ')}`;
+
 	}
 
 	_buildOffset() {
