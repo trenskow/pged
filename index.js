@@ -89,7 +89,8 @@ module.exports = exports = class PGed {
 		return result;
 	}
 
-	_convertResult(result) {
+	_convertResult(result, options) {
+		if ((options || {}).format === 'raw') return (result || {}).rows;
 		return ((result || {}).rows || []).map((row) => {
 			let newRow = {};
 			Object.keys(row).forEach((key) => {
@@ -209,7 +210,7 @@ module.exports = exports = class PGed {
 
 		let result;
 
-		const todo = async () => result = this._convertResult(await this._query(query, parameters));
+		const todo = async () => result = this._convertResult(await this._query(query, parameters), options);
 
 		if (this._transactions.always || options.transaction) await this.transaction(todo);
 		else await this.retained(todo);
@@ -225,25 +226,7 @@ module.exports = exports = class PGed {
 	}
 
 	_queryBuild(table) {
-		return new QueryBuilder(table, this._options, async (queryBuilder) => {
-
-			const [query, parameters] = queryBuilder._build();
-
-			let result = await this.exec(
-				query,
-				parameters,
-				{
-					first: queryBuilder._first,
-					transaction: queryBuilder._transaction
-				});
-
-			if (['null', 'undefined'].includes(typeof result)) {
-				result = queryBuilder._defaultResult;
-			}
-
-			return result;
-
-		});
+		return new QueryBuilder(table, this._options, this);
 	}
 
 	from(table) {

@@ -2,11 +2,15 @@
 
 const
 	caseit = require('@trenskow/caseit'),
-	CustomPromise = require('@trenskow/custom-promise');
+	CustomPromise = require('@trenskow/custom-promise'),
+	Puqeue = require('puqeue');
+
+const tableInformationQueue = new Puqeue();
+const tableInformation = {};
 
 module.exports = exports = class QueryBuilder extends CustomPromise {
 
-	constructor(table, options = {}, executor) {
+	constructor(table, options = {}, connection) {
 
 		super();
 
@@ -36,7 +40,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 		this._offset = 0;
 
-		this._executor = executor;
+		this._connection = connection;
 
 	}
 
@@ -285,6 +289,17 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 		}).concat(this._paginated ? `count(${this._table}.*) over() as total` : []).join(', ');
 	}
 
+	_formatParameter(keyPath, value) {
+		let [table, key] = keyPath.split('.');
+		if (typeof key === 'undefined') [table, key] = [this._table, table];
+		switch ((tableInformation[caseit(table, this._options.casing.db)] || {})[caseit(key, this._options.casing.db)]) {
+			case 'jsonb':
+				return typeof value === 'string' ? value : JSON.stringify(value);
+			default:
+				return value;
+		}
+	}
+
 	get _operatorMap() {
 		return {
 			'$or': 'or',
@@ -381,11 +396,11 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			}
 
 			if (!Array.isArray(condition[key])) {
-				this._queryParameters.push(condition[key]);
+				this._queryParameters.push(this._formatParameter(key, condition[key]));
 				return this._buildCondition(dbKey, comparer, `$${this._queryParameters.length}`);
 			} else {
 				const values = condition[key].map((value) => {
-					this._queryParameters.push(value);
+					this._queryParameters.push(this._formatParameter(key, value));
 					return `$${this._queryParameters.length}`;
 				});
 				return this._buildCondition(dbKey, comparer, `any(array[${values.join(',')}])`);
@@ -465,7 +480,7 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			} else if (/^:/.test(value)) {
 				value = value.substring(1);
 			} else {
-				this._queryParameters.push(value);
+				this._queryParameters.push(this._formatParameter(key, value));
 				value = `$${this._queryParameters.length}`;
 			}
 			return `${this._dbCase(key, true)} = ${value}`;
@@ -477,8 +492,8 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 	}
 
 	_buildInsertValues() {
-		return this._insertValues.map((value) => {
-			this._queryParameters.push(value);
+		return this._insertValues.map((value, idx) => {
+			this._queryParameters.push(this._formatParameter(this._insertKeys[idx], value));
 			return `$${this._queryParameters.length}`;
 		}).join(', ');
 	}
@@ -564,8 +579,41 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 
 	}
 
+	async _resolveTableInformation() {
+		await tableInformationQueue.add(async () => {
+
+			const tables = [this._table]
+				.concat(this._joins.map((join) => join.table))
+				.filter((table) => !Object.keys(tableInformation).includes(table));
+
+			await Promise.all(tables.map(async (table) => {
+				const rows = await this._connection.exec(`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '${table}';`, [], { format: 'raw' });
+				Object.assign(tableInformation, Object.fromEntries([[table, Object.fromEntries(rows.map((row) => {
+					return [row.column_name, row.data_type];
+				}))]]));
+			}));
+
+		});
+	}
+
 	async _exec() {
-		const rows = await this._executor(this);
+
+		await this._resolveTableInformation();
+
+		const [query, parameters] = this._build();
+
+		let rows = await this._connection.exec(
+			query,
+			parameters,
+			{
+				first: this._first,
+				transaction: this._transaction
+			});
+
+		if (['null', 'undefined'].includes(typeof rows)) {
+			rows = this._defaultResult;
+		}
+
 		if (this._paginated && !this._first) {
 			let total;
 			if (rows.length == 0) {
@@ -580,7 +628,9 @@ module.exports = exports = class QueryBuilder extends CustomPromise {
 			rows.forEach((item) => delete item.total);
 			return { total, items: rows };
 		}
+
 		return rows;
+
 	}
 
 	then(resolve, reject) {
