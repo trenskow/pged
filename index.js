@@ -6,14 +6,15 @@ const
 	{ Pool } = require('pg');
 
 const
-	QueryBuilder = require('./query-builder');
+	QueryBuilder = require('./query-builder'),
+	EventEmitter = require('./event-emitter');
 
 let id = 0;
 
 let pgOptions;
 let pool;
 
-module.exports = exports = class PGed {
+module.exports = exports = class PGed extends EventEmitter {
 
 	static get pg() {
 		return pgOptions;
@@ -29,6 +30,8 @@ module.exports = exports = class PGed {
 	}
 
 	constructor(options = {}) {
+
+		super();
 
 		pool = pool || new Pool(pgOptions);
 
@@ -105,6 +108,7 @@ module.exports = exports = class PGed {
 		this._connectionCount++;
 		if (this._connectionCount == 1) {
 			this._client = await pool.connect();
+			await this.emit('connected');
 		}
 	}
 
@@ -113,6 +117,7 @@ module.exports = exports = class PGed {
 		if (this._connectionCount == 0) {
 			await this._client.release();
 			this._client = undefined;
+			await this.emit('disconnected');
 		}
 	}
 
@@ -151,6 +156,7 @@ module.exports = exports = class PGed {
 					await this.set.transactionMode[this._transactions.mode]();
 				}
 				await this._query('begin;');
+				await this.emit('startedTransaction');
 			}
 		});
 	}
@@ -160,7 +166,9 @@ module.exports = exports = class PGed {
 			opt.rethrow = opt.rethrow !== false;
 			this._transactions.count--;
 			if (this._transactions.count == 0) {
-				await this._query(err || !this._commit ? 'rollback;' : 'commit;');
+				const shouldCommit = typeof err === 'undefined' && this._commit;
+				await this._query(shouldCommit ? 'commit;' : 'rollback;');
+				await this.emit('endedTransaction', err, shouldCommit);
 			}
 			await this._release();
 			if (err && opt.rethrow) throw err;
@@ -212,8 +220,14 @@ module.exports = exports = class PGed {
 
 		const todo = async () => result = this._convertResult(await this._query(query, parameters), options);
 
-		if (this._transactions.always || options.transaction) await this.transaction(todo);
-		else await this.retained(todo);
+		await this.emit('preQuery', query, parameters);
+
+		try {
+			if (this._transactions.always || options.transaction) await this.transaction(todo);
+			else await this.retained(todo);
+		} finally {
+			await this.emit('query', query, parameters);
+		}
 
 		if (options.first === true) {
 			return (result || [])[0];
