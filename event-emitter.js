@@ -25,8 +25,8 @@ module.exports = exports = class EventEmitter {
 
 	once(name, handler) {
 		const identifier = this.on(name, async (...args) => {
-			await handler(...args);
 			this.remove(name, identifier);
+			await handler(...args);
 		});
 	}
 
