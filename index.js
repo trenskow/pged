@@ -1,18 +1,18 @@
-'use strict';
-
 import Puqeue from 'puqeue';
 import caseit from '@trenskow/caseit';
-import { Pool } from 'pg';
-
-import QueryBuilder from './query-builder';
+import pg from 'pg';
 import EventEmitter from '@trenskow/async-event-emitter';
+
+import QueryBuilder from './query-builder.js';
+
+const { Pool } = pg;
 
 let id = 0;
 
 let pgOptions;
 let pool;
 
-export default exports = class PGed extends EventEmitter {
+export default class PGed extends EventEmitter {
 
 	static get pg() {
 		return pgOptions;

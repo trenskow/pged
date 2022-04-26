@@ -1,5 +1,3 @@
-'use strict';
-
 import caseit from '@trenskow/caseit';
 import CustomPromise from '@trenskow/custom-promise';
 import Puqeue from 'puqeue';
@@ -7,7 +5,7 @@ import Puqeue from 'puqeue';
 const tableInformationQueue = new Puqeue();
 const tableInformation = {};
 
-export default exports = class QueryBuilder extends CustomPromise {
+export default class QueryBuilder extends CustomPromise {
 
 	constructor(table, options = {}, connection) {
 
