@@ -5,14 +5,14 @@ module.exports = {
 		'mocha': true
 	},
 	'parserOptions': {
-		'ecmaVersion': 2017
+		'ecmaVersion': 2017,
+		'sourceType': 'module'
 	},
 	'extends': 'eslint:recommended',
 	'rules': {
 		'indent': [
 			'error',
-			'tab',
-			{ 'SwitchCase': 1 }
+			'tab'
 		],
 		'linebreak-style': [
 			'error',
@@ -45,15 +45,6 @@ module.exports = {
 				'allowEmptyCatch': true
 			}
 		],
-		'no-trailing-spaces': [
-			'error', {
-				'ignoreComments': true
-			}
-		],
-		'require-atomic-updates': 'off',
-		'eol-last': [
-			'error',
-			'always'
-		]
+		'require-atomic-updates': 'off'
 	}
 };

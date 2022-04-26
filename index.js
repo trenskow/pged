@@ -1,20 +1,18 @@
 'use strict';
 
-const
-	Puqeue = require('puqeue'),
-	caseit = require('@trenskow/caseit'),
-	{ Pool } = require('pg');
+import Puqeue from 'puqeue';
+import caseit from '@trenskow/caseit';
+import { Pool } from 'pg';
 
-const
-	QueryBuilder = require('./query-builder'),
-	EventEmitter = require('./event-emitter');
+import QueryBuilder from './query-builder';
+import EventEmitter from '@trenskow/async-event-emitter';
 
 let id = 0;
 
 let pgOptions;
 let pool;
 
-module.exports = exports = class PGed extends EventEmitter {
+export default exports = class PGed extends EventEmitter {
 
 	static get pg() {
 		return pgOptions;
