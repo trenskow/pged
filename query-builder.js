@@ -472,7 +472,7 @@ export default class QueryBuilder extends CustomPromise {
 	_buildUpdateKeysAndValues(keys, values) {
 		return `set ${keys.map((key, idx) => {
 			let value = values[idx];
-			if (typeof value === 'undefined' || value == null) {
+			if (value == null) {
 				value = 'null';
 			} else if (/^:/.test(value)) {
 				value = value.substring(1);
@@ -637,4 +637,4 @@ export default class QueryBuilder extends CustomPromise {
 			.catch((error) => this._reject(error));
 	}
 
-};
+}
