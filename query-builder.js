@@ -67,11 +67,13 @@ export default class QueryBuilder extends CustomPromise {
 	}
 
 	select(keys = ['*']) {
-		if (!Array.isArray(keys)) {
-			keys = [].concat(...keys.split('"').map((key, idx) => {
-				if (idx % 2 == 0) return key.split(/, ?/);
-				return [key];
-			})).filter((key) => key);
+		if (typeof keys !== 'string' || keys[0] !== ':') {
+			if (!Array.isArray(keys)) {
+				keys = [].concat(...keys.split('"').map((key, idx) => {
+					if (idx % 2 == 0) return key.split(/, ?/);
+					return [key];
+				})).filter((key) => key);
+			}
 		}
 		this._selectKeys = (this._selectKeys || []).concat(keys);
 		return this;
