@@ -387,6 +387,8 @@ export default class QueryBuilder extends CustomPromise {
 				switch (comparer) {
 				case '$eq':
 					return `${dbKey} is null`;
+				case '$neq':
+					// fallthrough
 				case '$ne':
 					return `${dbKey} is not null`;
 				default:
