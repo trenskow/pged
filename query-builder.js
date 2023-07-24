@@ -367,7 +367,8 @@ export default class QueryBuilder extends CustomPromise {
 			}
 
 			if (key.substring(0, 1) == ':') {
-				return this._buildCondition(key.substring(1), comparer, this._dbCase(condition[key]));
+				this._queryParameters.push(this._formatParameter(key, condition[key]));
+				return this._buildCondition(key.substring(1), comparer, `$${this._queryParameters.length}`);
 			}
 
 			let dbKey = key;
