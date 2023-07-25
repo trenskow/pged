@@ -201,7 +201,8 @@ export default class QueryBuilder extends CustomPromise {
 						options.local = options.local || this._defaultPrimaryKey;
 						options.foreign = options.foreign || this._defaultPrimaryKey;
 						let local = options.local.substring(0, 1) == ':' ? this._dbCase(options.local) : `:${this._table}.${this._dbCase(options.local)}`;
-						let foreign = options.foreign.substring(0, 1) == ':' ? this._dbCase(options.foreign.substring(1)) : `${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
+						let direct = local.substring(0, 1) == ':' ? ':' : '';
+						let foreign = options.foreign.substring(0, 1) == ':' ? `${direct}${this._dbCase(options.foreign.substring(1))}` : `${direct}${this._dbCase(options.table)}.${this._dbCase(options.foreign)}`;
 						options.conditions[local] = foreign;
 					}
 					options.conditions = this._formalizeConditions(options.conditions);
@@ -367,8 +368,14 @@ export default class QueryBuilder extends CustomPromise {
 			}
 
 			if (key.substring(0, 1) == ':') {
-				this._queryParameters.push(this._formatParameter(key, condition[key]));
-				return this._buildCondition(key.substring(1), comparer, `$${this._queryParameters.length}`);
+				let value = condition[key];
+				if (typeof value === 'string' && value.substring(0, 1) == ':') {
+					value = this._dbCase(condition[key].substring(1));
+				} else {
+					this._queryParameters.push(this._formatParameter(key, condition[key]));
+					value = `$${this._queryParameters.length}`;
+				}
+				return this._buildCondition(key.substring(1), comparer, value);
 			}
 
 			let dbKey = key;
