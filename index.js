@@ -150,10 +150,10 @@ export default class PGed extends EventEmitter {
 			this._transactions.count++;
 			await this._retain();
 			if (this._transactions.count == 1) {
+				await this._query('begin;');
 				if (this._transactions.mode !== 'readCommitted') {
 					await this.set.transactionMode[this._transactions.mode]();
 				}
-				await this._query('begin;');
 				await this.emit('startedTransaction');
 			}
 		});
