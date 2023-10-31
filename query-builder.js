@@ -1,6 +1,7 @@
 import caseit from '@trenskow/caseit';
 import CustomPromise from '@trenskow/custom-promise';
 import Puqeue from 'puqeue';
+import parse from '@trenskow/parse';
 
 const tableInformationQueue = new Puqeue();
 const tableInformation = {};
@@ -41,7 +42,7 @@ export default class QueryBuilder extends CustomPromise {
 
 	}
 
-	_dbCase(input, quote) {
+	_dbCasePart(input, quote) {
 		return input
 			.split(/"|'/)
 			.map((part, idx) => {
@@ -64,6 +65,31 @@ export default class QueryBuilder extends CustomPromise {
 					.join('.');
 			})
 			.join('');
+	}
+
+	_dbCase(input, quote) {
+
+		const parts = parse(['(', ')'], { maxDepth: 1, boundaries: 'include' }).do(input);
+
+		if (Array.isArray(parts)) {
+			return parts
+				.filter((part) => part.length)
+				.map((part) => this._dbCase(part, quote))
+				.join('');
+		}
+
+		let pre = input[0] === '(' ? '(' : '';
+		let post = input[input.length - 1] === ')' ? ')': '';
+
+		return `${pre}${input
+			.substring(pre.length, input.length - post.length)
+			.split(/, ?/)
+			.map((part) => part
+				.split(' ')
+				.map((part) => /[a-z]/i.test(part) ? this._dbCasePart(part, quote) : part)
+				.join(' '))
+			.join(', ')}${post}`;
+
 	}
 
 	select(keys = ['*']) {
@@ -218,7 +244,7 @@ export default class QueryBuilder extends CustomPromise {
 	first(key, options = { select: true }) {
 		this._limit = 1;
 		if (key) {
-			if (options.select) this.select(key);
+			if (options.select) this.select(`${this._table}.${key}`);
 			this._first = key;
 		}
 		else this._first = true;
