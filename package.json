@@ -28,6 +28,6 @@
     "@trenskow/custom-promise": "^0.10.3",
     "@trenskow/parse": "^0.1.17",
     "pg": "^8.11.3",
-    "puqeue": "^1.1.1"
+    "puqeue": "^1.1.2"
   }
 }
