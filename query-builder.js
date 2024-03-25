@@ -669,10 +669,14 @@ export default class QueryBuilder extends CustomPromise {
 	}
 
 	then(resolve, reject) {
-		super.then(resolve, reject);
+
 		this._exec()
 			.then((...args) => this._resolve(...args))
 			.catch((error) => this._reject(error));
+
+		return super
+			.then(resolve, reject)
+
 	}
 
 }
