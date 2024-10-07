@@ -398,6 +398,15 @@ export default class QueryBuilder extends CustomPromise {
 				if (typeof value === 'string' && value.substring(0, 1) == ':') {
 					value = this._dbCase(condition[key].substring(1));
 				} else {
+					if (value == null || typeof value === 'undefined') {
+						if (comparer === '$eq') {
+							return `${this._dbCase(key.substring(1), true)} is null`;
+						} else if (comparer === '$neq' || comparer === '$ne') {
+							return `${this._dbCase(key.substring(1), true)} is not null`;
+						} else {
+							throw new TypeError(`Comparer ${comparer} is not usable with \`null\` values.`);
+						}
+					}
 					this._queryParameters.push(this._formatParameter(key, condition[key]));
 					value = `$${this._queryParameters.length}`;
 				}
