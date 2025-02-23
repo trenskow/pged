@@ -26,14 +26,14 @@
 		"@trenskow/async-event-emitter": "^0.1.54",
 		"@trenskow/caseit": "^1.4.8",
 		"@trenskow/custom-promise": "^0.13.5",
-		"@trenskow/parse": "^0.1.29",
-		"pg": "^8.13.1",
+		"@trenskow/parse": "^0.1.30",
+		"pg": "^8.13.3",
 		"puqeue": "^1.1.13"
 	},
 	"devDependencies": {
-		"@eslint/eslintrc": "^3.2.0",
+		"@eslint/eslintrc": "^3.3.0",
 		"@eslint/js": "^9.13.0",
-		"eslint": "^9.19.0",
-		"globals": "^15.14.0"
+		"eslint": "^9.21.0",
+		"globals": "^15.15.0"
 	}
 }
