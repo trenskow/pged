@@ -23,12 +23,12 @@
 	},
 	"homepage": "https://github.com/trenskow/pged#readme",
 	"dependencies": {
-		"@trenskow/async-event-emitter": "^0.1.60",
-		"@trenskow/caseit": "^1.4.10",
-		"@trenskow/custom-promise": "^0.13.7",
+		"@trenskow/async-event-emitter": "^0.1.61",
+		"@trenskow/caseit": "^1.4.11",
+		"@trenskow/custom-promise": "^0.13.8",
 		"@trenskow/parse": "^0.1.32",
 		"pg": "^8.15.6",
-		"puqeue": "^1.1.15"
+		"puqeue": "^1.1.16"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.1",
