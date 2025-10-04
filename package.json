@@ -23,7 +23,7 @@
 	},
 	"homepage": "https://github.com/trenskow/pged#readme",
 	"dependencies": {
-		"@trenskow/async-event-emitter": "^0.1.77",
+		"@trenskow/async-event-emitter": "^0.1.78",
 		"@trenskow/caseit": "^1.4.15",
 		"@trenskow/custom-promise": "^0.13.12",
 		"@trenskow/parse": "^0.1.38",
