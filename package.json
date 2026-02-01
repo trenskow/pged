@@ -26,15 +26,15 @@
 		"@trenskow/async-event-emitter": "^0.1.92",
 		"@trenskow/caseit": "^1.4.19",
 		"@trenskow/custom-promise": "^0.13.16",
-		"@trenskow/parse": "^0.1.43",
-		"@trenskow/wait": "^1.3.87",
-		"pg": "^8.16.3",
+		"@trenskow/parse": "^0.1.44",
+		"@trenskow/wait": "^1.3.88",
+		"pg": "^8.18.0",
 		"puqeue": "^1.1.27"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.3",
 		"@eslint/js": "^9.13.0",
 		"eslint": "^9.39.2",
-		"globals": "^17.0.0"
+		"globals": "^17.3.0"
 	}
 }
