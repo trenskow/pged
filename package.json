@@ -27,7 +27,7 @@
 		"@trenskow/caseit": "^1.4.32",
 		"@trenskow/custom-promise": "^0.13.29",
 		"@trenskow/parse": "^0.1.59",
-		"@trenskow/wait": "^1.3.124",
+		"@trenskow/wait": "^1.3.125",
 		"pg": "^8.23.0",
 		"puqeue": "^1.1.43"
 	},
