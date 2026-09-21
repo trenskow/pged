@@ -23,7 +23,7 @@
 	},
 	"homepage": "https://github.com/trenskow/pged#readme",
 	"dependencies": {
-		"@trenskow/async-event-emitter": "^0.1.152",
+		"@trenskow/async-event-emitter": "^0.1.154",
 		"@trenskow/caseit": "^1.4.32",
 		"@trenskow/custom-promise": "^0.13.29",
 		"@trenskow/parse": "^0.1.59",
@@ -34,7 +34,7 @@
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.7",
 		"@eslint/js": "^10.0.1",
-		"eslint": "^10.10.0",
+		"eslint": "^10.11.0",
 		"globals": "^17.12.0"
 	}
 }
